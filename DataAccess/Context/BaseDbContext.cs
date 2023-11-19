@@ -10,11 +10,12 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Context;
 
-public class BaseDbContext : IdentityDbContext<User, UserRole, string>
+public class BaseDbContext : IdentityDbContext<User,UserRole,string>
 {
-    protected IConfiguration Configuration;
-    public BaseDbContext(DbContextOptions options, IConfiguration configuration) : base(options)
+    protected IConfiguration _configuration;
+    public BaseDbContext(DbContextOptions<BaseDbContext> dbContextOptions, IConfiguration configuration) : base(dbContextOptions)
     {
-        Configuration = configuration;
+        _configuration = configuration;
+        Database.EnsureCreated();
     }
 }

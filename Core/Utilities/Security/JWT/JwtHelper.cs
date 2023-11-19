@@ -1,5 +1,5 @@
 ﻿using Core.Entities.Concrete;
-using Core.Utilities.Interceptors;
+using Core.Extension;
 using Core.Utilities.Security.Encryption;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
