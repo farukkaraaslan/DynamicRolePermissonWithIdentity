@@ -10,4 +10,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DataAccess\" />
+    <Folder Include="Utilities\Interceptors\" />
+    <Folder Include="Utilities\Security\" />
+  </ItemGroup>
+
 </Project>
