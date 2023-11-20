@@ -19,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddIdentityCore<User>()
                 .AddRoles<UserRole>()
+                .AddSignInManager()
                 .AddEntityFrameworkStores<BaseDbContext>()
                 .AddDefaultTokenProviders();
 #endregion
