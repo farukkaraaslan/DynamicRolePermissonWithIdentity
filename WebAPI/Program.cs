@@ -12,7 +12,6 @@ using Core.Utilities.Security.JWT;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 #region Identity Options
@@ -47,16 +46,20 @@ builder.Services
 #endregion
 
 #region AutoFac
+
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(builder2 =>
     builder2.RegisterModule(new AutofacBusinessModule(builder.Configuration))
     );
+
 #endregion
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
+
+
 
 if (app.Environment.IsDevelopment())
 {

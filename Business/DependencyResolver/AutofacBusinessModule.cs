@@ -16,6 +16,8 @@ using Autofac.Extras.DynamicProxy;
 using DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using AutoMapper;
+using Business.Profiles;
 
 namespace Business.DependencyResolver;
 
@@ -39,21 +41,34 @@ public class AutofacBusinessModule : Module
 
         builder.RegisterType<AuthManager>().As<IAuthService>().SingleInstance();
 
-
-        builder.Register(context =>
+        #region Auto Mapper Resolve
+        builder.Register(c => new MapperConfiguration(cfg =>
         {
-            var optionsBuilder = new DbContextOptionsBuilder<BaseDbContext>();
-            optionsBuilder.UseSqlServer(_configuration.GetConnectionString("MssqlServerConnection"));
-            return new BaseDbContext(optionsBuilder.Options, _configuration);
-        }).AsSelf().InstancePerLifetimeScope();
+            cfg.AddProfile<MappingProfiles>();
+        })).AsSelf().SingleInstance();
 
-        //çalışan uygulamada interceptor varmı bak 
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        builder.Register(c => c.Resolve<MapperConfiguration>().CreateMapper(c.Resolve)).As<IMapper>().InstancePerLifetimeScope();
+        #endregion
 
-        builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()
-            .EnableInterfaceInterceptors(new ProxyGenerationOptions()
+        #region DbContex Resolve
+        builder.Register(context =>
             {
-                Selector = new AspectInterceptorSelector()
-            }).SingleInstance();
+                var optionsBuilder = new DbContextOptionsBuilder<BaseDbContext>();
+                optionsBuilder.UseSqlServer(_configuration.GetConnectionString("MssqlServerConnection"));
+                return new BaseDbContext(optionsBuilder.Options, _configuration);
+            }).AsSelf().InstancePerLifetimeScope();
+        #endregion
+
+        #region Applicaiton Interceptor Check
+            //çalışan uygulamada interceptor varmı bak 
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()
+                .EnableInterfaceInterceptors(new ProxyGenerationOptions()
+                {
+                    Selector = new AspectInterceptorSelector()
+                }).SingleInstance();
+
+        #endregion
     }
 }
