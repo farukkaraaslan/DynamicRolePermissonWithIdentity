@@ -27,26 +27,28 @@ public class AuthManager : IAuthService
 
     public async Task<IDataResult<AccessToken>> CreateAccessToken(string userName)
     {
-     
-        var user = await _userManager.FindByNameAsync(userName);
-        var claims = await _userService.GetRoleAsync(userName);
-        var accessToken = _tokenHelper.CreateToken(user, claims.Data);
+
+        var user = await _userService.GetByUserNameAsync(userName);
+        if (user == null)
+        {
+            return new ErrorDataResult<AccessToken>("Kullanıcı bulunamadı.");
+        }
+        var claims = await _userService.GetRoleAsync(user.Data.UserName);
+        var accessToken = _tokenHelper.CreateToken(user.Data, claims.Data);
         return new SuccessDataResult<AccessToken>(accessToken, "token oluşturuldu");
     }
 
     public async Task<IResult> Login(string userName, string password)
     {
-        var user = await _userManager.FindByNameAsync(userName);
-
+        var user =  await _userService.GetByUserNameAsync(userName);
         if (user == null)
         {
-            return new ErrorResult("öye bir kullanıc yok");
+            return new ErrorDataResult<AccessToken>("Kullanıcı bulunamadı.");
         }
-
-        if (!await _userManager.CheckPasswordAsync(user, password))
+        if (!await _userManager.CheckPasswordAsync(user.Data, password))
         {
-            return new ErrorResult("kullanıc adı veya şifre yanlış");
+            return new ErrorResult("Kullanıcı adı veya parola hatalı.");
         }
-        return new SuccessResult("kullanıc giriş yaptı");
+        return new SuccessResult("Griş işlemi başarılı.");
     }
 }

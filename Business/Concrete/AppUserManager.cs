@@ -11,6 +11,13 @@ public class AppUserManager : IUserService
 {
     private readonly UserManager<User> _userManager;
     private readonly IMapper _mapper;
+
+    public AppUserManager(UserManager<User> userManager, IMapper mapper)
+    {
+        _userManager = userManager;
+        _mapper = mapper;
+    }
+
     public async Task<IResult> CreateAsync(UserRegisterDto userRegisterDto, string password)
     {
         var user = _mapper.Map<User>(userRegisterDto);
@@ -65,12 +72,12 @@ public class AppUserManager : IUserService
     }
     public async Task<IDataResult<User>> GetByEmailAsync(string email)
     {
-        var user = await _userManager.FindByNameAsync(email);
-        return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>();
+        var user = await _userManager.FindByEmailAsync(email);
+        return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>(user);
     }
     public async Task<IDataResult<User>> GetByIdAsync(string id)
     {
-        var user = await _userManager.FindByNameAsync(id);
+        var user = await _userManager.FindByIdAsync(id);
 
         return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamdı.") : new SuccessDataResult<User>(user);
     }
@@ -78,19 +85,19 @@ public class AppUserManager : IUserService
     {
         var user = await _userManager.FindByNameAsync(username);
 
-        return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>();
+        return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>(user);
     }
     public async Task<IDataResult<List<UserRole>>> GetRoleAsync(string userName)
     {
-        var user = await GetByUserNameAsync(userName);
-        if (user.Data == null)
+        var user = await _userManager.FindByNameAsync(userName);
+        if (user== null)
         {
             return new ErrorDataResult<List<UserRole>>("Kullanıcı bulunamadı.");
         }
-        var roles = await _userManager.GetRolesAsync(user.Data);
+        var roles = await _userManager.GetRolesAsync(user);
 
         var userRoles = roles.Select(role => new UserRole { Name = role }).ToList();
 
-        return new SuccessDataResult<List<UserRole>>(userRoles, $"{user.Data.Id} ID'ye sahip kullanıcının rolleri bulundu.");
+        return new SuccessDataResult<List<UserRole>>(userRoles, $"{user.Id} ID'ye sahip kullanıcının rolleri bulundu.");
     }
 }
