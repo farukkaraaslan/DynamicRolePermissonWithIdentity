@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Core.Entities.Concrete;
 
-public class User :IdentityUser
+public class User :IdentityUser<Guid>
 {
     public string Name { get; set; }
     public string LastName { get; set; }
