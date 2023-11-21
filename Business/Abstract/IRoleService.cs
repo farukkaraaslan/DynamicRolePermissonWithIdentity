@@ -12,5 +12,5 @@ namespace Business.Abstract;
 public interface IRoleService
 {
     Task<IResult> CreateRoleAsync(RoleRequestDto role);
-    IDataResult<List<UserRole>> GetRole();
+    IDataResult<List<RoleWithClaimsDto>> GetRoles();
 }

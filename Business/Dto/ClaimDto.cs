@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Business.Dto;
 
-public class RoleRequestDto
+public class ClaimDto
 {
-    public string Name { get; set; }
-    public List<string> Claims { get; set; }
+    public string Type { get; set; }
+    public string Value { get; set; }
 }
