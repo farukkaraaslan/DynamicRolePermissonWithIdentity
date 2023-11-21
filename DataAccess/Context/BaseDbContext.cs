@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Context;
 
-public class BaseDbContext : IdentityDbContext<User,UserRole,string>
+public class BaseDbContext : IdentityDbContext<User,UserRole,Guid>
 {
     protected IConfiguration _configuration;
     public BaseDbContext(DbContextOptions<BaseDbContext> dbContextOptions, IConfiguration configuration) : base(dbContextOptions)

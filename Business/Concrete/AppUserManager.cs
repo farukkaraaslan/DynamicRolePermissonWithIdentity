@@ -34,7 +34,7 @@ public class AppUserManager : IUserService
     {
         var user = _mapper.Map<User>(userUpdateDto);
 
-        var existingUser = await GetByIdAsync(user.Id);
+        var existingUser = await GetByIdAsync(user.Id.ToString());
 
         await _userManager.UpdateAsync(existingUser.Data);
 
