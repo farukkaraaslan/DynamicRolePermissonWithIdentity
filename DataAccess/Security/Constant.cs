@@ -42,9 +42,5 @@ public static class Constant
             public const string Edit = "Permissions.Notices.Edit";
             public const string Delete = "Permissions.Notices.Delete";
         }
-
-
-
-
     }
 }

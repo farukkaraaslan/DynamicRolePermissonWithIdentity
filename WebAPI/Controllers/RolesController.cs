@@ -13,31 +13,30 @@ namespace WebAPI.Controllers
  
     public class RolesController : ControllerBase
     {
-        private IRoleService roleService;
+        private IRoleService _roleService;
 
         public RolesController(IRoleService roleService)
         {
-            this.roleService = roleService;
+            _roleService = roleService;
         }
         [HttpPost]
-        public async Task<IActionResult> Create(RoleRequestDto userRole)
+        public async Task<IActionResult> CreateRole([FromBody] RoleRequestDto roleDto)
         {
-            var result = await roleService.CreateRoleAsync(userRole);
-            if (result.Success)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            var result = await _roleService.CreateRoleAsync(roleDto);
+
+            return result.Success
+                ? Ok(result.Message)
+                : BadRequest(result.Message);
         }
-        [HttpGet]
-        public IActionResult GetAll()
+
+        [HttpGet()]
+        public IActionResult GetRoles()
         {
-            var result = roleService.GetRole();
-            if (result.Success)
-            {
-                return Ok(result);
-            }
-            return BadRequest();
+            var result = _roleService.GetRoles();
+
+            return result.Success
+                ? Ok(result.Data)
+                : BadRequest(result.Message);
         }
     }
 }
