@@ -11,6 +11,7 @@ using Core.Utilities.Security.Encryption;
 using Core.Utilities.Security.JWT;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using DataAccess.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(builder2 =>
 
 #endregion
 
+
+
+
+
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -68,9 +74,31 @@ if (app.Environment.IsDevelopment())
 }
 
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger("app");
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<User>>();
+        var roleManager = services.GetRequiredService<RoleManager<UserRole>>();
+        await Seeds.DefaultRoles.SeedAsync(roleManager);
+        await Seeds.DefaultUsers.SeedBasicUserAsync(userManager);
+        await Seeds.DefaultUsers.SeedSuperAdminAsync(userManager, roleManager);
+        logger.LogInformation("Finished Seeding Default Data");
+        logger.LogInformation("Application Starting");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "An error occurred seeding the DB");
+    }
+}
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
