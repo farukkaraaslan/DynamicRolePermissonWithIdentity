@@ -94,8 +94,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning(ex, "An error occurred seeding the DB");
     }
 }
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 
