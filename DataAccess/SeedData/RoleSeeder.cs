@@ -1,5 +1,6 @@
-﻿using Business.Constants.Security;
-using Core.Entities.Concrete;
+
+﻿using Core.Entities.Concrete;
+using DataAccess.Security;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -13,9 +14,11 @@ public static class RoleSeeder
 {
     public static async Task SeedRolesAsync(RoleManager<UserRole> roleManager)
     {
-        await SeedRoleAsync(roleManager, CustomRolesConstant.Role.Admin);
-        await SeedRoleAsync(roleManager, CustomRolesConstant.Role.User);
-        await SeedRoleAsync(roleManager, CustomRolesConstant.Role.Writer);
+
+        await SeedRoleAsync(roleManager, Constant.Roles.Admin);
+        await SeedRoleAsync(roleManager, Constant.Roles.SuperAdmin);
+        await SeedRoleAsync(roleManager, Constant.Roles.User);
+
     }
 
     private static async Task SeedRoleAsync(RoleManager<UserRole> roleManager, string roleName)
