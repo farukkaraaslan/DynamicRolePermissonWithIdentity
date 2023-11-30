@@ -1,0 +1,43 @@
+﻿@model List<RoleDto>
+@{
+    ViewData["title"] = "ındex";
+    Layout = "~/views/shared/_layout.cshtml";
+}
+
+ <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+         <a href="/home/create" class="btn btn-outline-success btn-fw" >Create</a>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Permissons</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                  @foreach (var item in Model)
+                     {
+                        <tr>
+                           <td>@item.Id</td>
+                           <td>@item.Name</td>
+                           
+                           <td>
+                                @foreach (var item2 in item.Claims)
+                                {
+                                    <label class="badge badge-info">@item2.Value</label> <br />
+                                }
+                           </td>
+                           <td><a href="/home/update/@item.Id" type="button" class="btn btn-info">Edit</a></td>
+                        </tr> 
+                      }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</div>
+

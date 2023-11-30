@@ -1,8 +1,5 @@
 ﻿using Business.Abstract;
 using Business.Dto;
-using Core.Entities.Concrete;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -10,7 +7,7 @@ namespace WebAPI.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
- 
+
     public class RolesController : ControllerBase
     {
         private IRoleService _roleService;
@@ -35,8 +32,28 @@ namespace WebAPI.Controllers
             var result = _roleService.GetRoles();
 
             return result.Success
-                ? Ok(result.Data)
+                ? Ok(result)
                 : BadRequest(result.Message);
+        }
+        [HttpPut()]
+        public async Task<IActionResult> UpdateRoleClaims([FromBody] RoleUpdateDto roleUpdateDto)
+        {
+            var updateResult = await _roleService.UpdateRoleClaimsAsync(roleUpdateDto, roleUpdateDto.Claims);
+
+            if (updateResult.Success)
+            {
+                return Ok(new { Message = "Role claims updated successfully." });
+            }
+
+            return BadRequest(new { Error = updateResult.Message });
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var result = await _roleService.GetByIdAsync(id.ToString());
+            return result.Success
+            ? Ok(result)
+            : BadRequest(result.Message);
         }
     }
 }

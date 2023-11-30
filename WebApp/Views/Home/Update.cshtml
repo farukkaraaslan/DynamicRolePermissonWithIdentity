@@ -1,0 +1,33 @@
+﻿@model UpdateRoleDto
+@{
+    ViewData["Title"] = "Update";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="col-12 grid-margin stretch-card">
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Update" method="post">
+                <div class="form-group">
+                    <label for="Name" class="control-label">Role Name</label>
+                    <input type="text" asp-for="Name" class="form-control" />
+                    <span class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    @foreach (var claim in ViewBag.AllClaims)
+                    {
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" name="Claims" value="@claim.Value" @(Model.Claims.Any(c => c.Value == claim.Value) ? "checked" : "")>
+                                @claim.Value
+                                <i class="input-helper"></i>
+                            </label>
+                        </div>
+                    }
+                </div>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+        </div>
+    </div>
+</div>
+
