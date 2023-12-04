@@ -1,0 +1,48 @@
+﻿@using WebApp.Helpers
+@model List<RoleDto>
+@{
+    ViewData["title"] = "ındex";
+    Layout = "~/views/shared/_layout.cshtml";
+}
+
+<div class="col-12 grid-margin stretch-card">
+    <div class="card">
+        <div class="card-body">
+            <a asp-controller="Role" asp-action="create" class="btn btn-outline-success btn-fw">Create</a>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Permissons</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.Name</td>
+                                <td>
+                                    <div class="row">
+                                        @foreach (var item2 in item.Claims)
+                                        {
+                                            <div class="col-md-3 mb-2 ">
+                                                <!-- col-md-3: 3 sütun, mb-2: Margin-bottom 2 -->
+                                                <div class="badge @PermissionColorHelper.GetPermissionColor(item2.Value)">@item2.Value</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td><a href="/role/update/@item.Id" type="button" class="btn btn-info">Edit</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

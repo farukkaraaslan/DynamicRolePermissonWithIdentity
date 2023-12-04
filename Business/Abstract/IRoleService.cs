@@ -5,8 +5,8 @@ namespace Business.Abstract;
 
 public interface IRoleService
 {
-    Task<IResult> CreateRoleAsync(RoleRequestDto role);
+    Task<IResult> CreateAsync(RoleRequestDto role);
     Task<IDataResult<RoleResponseDto>> GetByIdAsync(string id);
-    IDataResult<List<RoleWithClaimsDto>> GetRoles();
+    IDataResult<List<RoleWithClaimsDto>> GetAll();
     Task<IResult> UpdateRoleClaimsAsync(RoleUpdateDto roleUpdateDto, List<ClaimDto> claims);
 }

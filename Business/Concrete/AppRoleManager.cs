@@ -1,7 +1,8 @@
 ﻿using Business.Abstract;
-using Business.BusinessAspects;
+using Business.Constants;
 using Business.Dto;
 using Core.Entities.Concrete;
+using Core.Utilities.Business;
 using Core.Utilities.Results;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
@@ -17,7 +18,7 @@ public class AppRoleManager : IRoleService
         _roleManager = roleManager;
     }
 
-    public IDataResult<List<RoleWithClaimsDto>> GetRoles()
+    public IDataResult<List<RoleWithClaimsDto>> GetAll()
     {
 
         var roles = _roleManager.Roles.ToList();
@@ -39,102 +40,8 @@ public class AppRoleManager : IRoleService
             rolesWithClaims.Add(roleWithClaims);
         }
 
-        return new SuccessDataResult<List<RoleWithClaimsDto>>(rolesWithClaims, "Roles retrieved successfully.");
+        return new SuccessDataResult<List<RoleWithClaimsDto>>(rolesWithClaims, Messages.Role.Listed);
     }
-    public async Task<IResult> CreateRoleAsync(RoleRequestDto roleDto)
-    {
-        var existingRole = await _roleManager.FindByNameAsync(roleDto.Name);
-
-        if (existingRole != null)
-        {
-            return new ErrorResult("Role already exists.");
-        }
-
-        var newRole = new UserRole { Name = roleDto.Name };
-        var createRoleResult = await _roleManager.CreateAsync(newRole);
-
-        if (createRoleResult.Succeeded)
-        {
-            var addClaimsResult = await AddClaimsToRoleAsync(newRole, roleDto.Claims);
-
-            return addClaimsResult.Succeeded
-                ? new SuccessResult("Role created successfully.")
-                : new ErrorResult("Failed to add claims to the role.");
-        }
-
-        return new ErrorResult("Failed to create role.");
-    }
-
-
-
-    public async Task<IResult> UpdateRoleClaimsAsync(RoleUpdateDto roleUpdateDto, List<ClaimDto> claims)
-    {
-        if (claims == null)
-        {
-            return new ErrorResult("New claims list is null.");
-        }
-
-        var existingRole = await _roleManager.FindByIdAsync(roleUpdateDto.Id.ToString());
-
-        if (existingRole == null)
-        {
-            return new ErrorResult("Role not found.");
-        }
-
-        // Güncelleme için rol ismini ayarla
-        existingRole.Name = roleUpdateDto.Name;
-
-        // Mevcut claim'leri temizle
-        var existingClaims = await _roleManager.GetClaimsAsync(existingRole);
-        foreach (var existingClaim in existingClaims)
-        {
-            await _roleManager.RemoveClaimAsync(existingRole, existingClaim);
-        }
-
-        // Yeni claim'leri ekle
-        foreach (var newClaim in claims)
-        {
-            var claim = new Claim("Permissions", newClaim.Value);
-            await _roleManager.AddClaimAsync(existingRole, claim);
-        }
-
-        var updateRoleResult = await _roleManager.UpdateAsync(existingRole);
-
-        return updateRoleResult.Succeeded
-            ? new SuccessResult("Role claims updated successfully.")
-            : new ErrorResult($"Failed to update role claims. {string.Join(", ", updateRoleResult.Errors)}");
-    }
-
-
-
-
-    private async Task<IdentityResult> AddClaimsToRoleAsync(UserRole role, List<ClaimDto> claims)
-    {
-        var roleClaims = await _roleManager.GetClaimsAsync(role);
-
-        foreach (var claimDto in claims)
-        {
-            var newClaim = new Claim(claimDto.Type, claimDto.Value);
-
-            // Eğer bu iddia zaten rolde varsa eklemeyi atla
-            if (!roleClaims.Any(c => c.Type == newClaim.Type && c.Value == newClaim.Value))
-            {
-                var result = await _roleManager.AddClaimAsync(role, newClaim);
-
-                if (!result.Succeeded)
-                {
-                    // Eğer ekleme başarısız olursa, hata işleme kodunu burada ele alabilirsiniz
-                    // Örneğin, return IdentityResult.Failed(result.Errors) gibi bir şey yapabilirsiniz.
-                    return result;
-                }
-            }
-        }
-
-        return IdentityResult.Success;
-    }
-
-
-    [SecuredOperation("Permissions.Blogs.Create,Super-Admin")]
     public async Task<IDataResult<RoleResponseDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
@@ -150,7 +57,110 @@ public class AppRoleManager : IRoleService
             }).ToList()
         };
 
-        return role == null ? new ErrorDataResult<RoleResponseDto>("Kullanıcı bulunamdı.") : new SuccessDataResult<RoleResponseDto>(roleResponseDto);
+        return role == null
+            ? new ErrorDataResult<RoleResponseDto>(Messages.Role.NotFound)
+            : new SuccessDataResult<RoleResponseDto>(roleResponseDto);
 
+    }
+    public async Task<IResult> CreateAsync(RoleRequestDto roleDto)
+    {
+        IResult result = BusinessRules.Run(CheckIfRoleNameExists(roleDto.Name));
+        if (!result.Success)
+        {
+            return result;
+        }
+
+        var newRole = new UserRole
+        {
+            Name = roleDto.Name
+        };
+
+        var createRoleResult = await _roleManager.CreateAsync(newRole);
+
+
+        if (!createRoleResult.Succeeded)
+        {
+            return new ErrorResult(Messages.Role.FailedCreate);
+        }
+
+        await AddNewClaimsToRole(roleDto.Claims, newRole);
+
+        return new SuccessResult(Messages.Role.Created);
+
+
+    }
+    public async Task<IResult> UpdateRoleClaimsAsync(RoleUpdateDto roleUpdateDto, List<ClaimDto> claims)
+    {
+        IResult result = BusinessRules.Run(CheckIfRoleExistsById(roleUpdateDto.Id.ToString()), CheckIfRoleNameExists(roleUpdateDto.Name));
+        if (!result.Success)
+        {
+            return result;
+        }
+
+        var existingRole = new UserRole();
+        existingRole.Name = roleUpdateDto.Name;
+
+        var existingClaims = await _roleManager.GetClaimsAsync(existingRole);
+
+        await RemoveClaimsToRole(existingRole, existingClaims);
+
+        await AddNewClaimsToRole(claims, existingRole);
+
+        var updateRoleResult = await _roleManager.UpdateAsync(existingRole);
+
+        if (!updateRoleResult.Succeeded)
+        {
+            foreach (var error in updateRoleResult.Errors)
+                return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+        }
+        return new SuccessResult(Messages.Role.UpdatedSuccessfully);
+
+    }
+
+    public IResult CheckIfRoleExistsById(string id)
+    {
+        var existingRole = _roleManager.FindByIdAsync(id).Result;
+        if (existingRole == null)
+        {
+            return new ErrorResult(Messages.Role.NotFound);
+        }
+        return new SuccessResult();
+    }
+
+    public IResult CheckIfRoleNameExists(string roleName)
+    {
+        var existingRole = _roleManager.FindByNameAsync(roleName).Result;
+        return existingRole != null
+            ? new ErrorResult(Messages.Role.AlreadyExists)
+            : new SuccessResult();
+    }
+    private async Task<IResult> RemoveClaimsToRole(UserRole? existingRole, IList<Claim> existingClaims)
+    {
+        foreach (var existingClaim in existingClaims)
+        {
+            var removeClaimResult = await _roleManager.RemoveClaimAsync(existingRole, existingClaim);
+            if (!removeClaimResult.Succeeded)
+            {
+                foreach (var error in removeClaimResult.Errors)
+                    return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+            }
+        }
+        return new SuccessResult();
+    }
+    private async Task<IResult> AddNewClaimsToRole(List<ClaimDto> claims, UserRole? existingRole)
+    {
+        foreach (var newClaim in claims)
+        {
+            var claim = new Claim("Permissions", newClaim.Value);
+            var addClaimResult = await _roleManager.AddClaimAsync(existingRole, claim);
+
+
+            if (!addClaimResult.Succeeded)
+            {
+                foreach (var error in addClaimResult.Errors)
+                    return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+            }
+        }
+        return new SuccessResult();
     }
 }

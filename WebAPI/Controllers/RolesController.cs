@@ -19,7 +19,7 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRole([FromBody] RoleRequestDto roleDto)
         {
-            var result = await _roleService.CreateRoleAsync(roleDto);
+            var result = await _roleService.CreateAsync(roleDto);
 
             return result.Success
                 ? Ok(result.Message)
@@ -29,7 +29,7 @@ namespace WebAPI.Controllers
         [HttpGet()]
         public IActionResult GetRoles()
         {
-            var result = _roleService.GetRoles();
+            var result = _roleService.GetAll();
 
             return result.Success
                 ? Ok(result)
@@ -38,15 +38,13 @@ namespace WebAPI.Controllers
         [HttpPut()]
         public async Task<IActionResult> UpdateRoleClaims([FromBody] RoleUpdateDto roleUpdateDto)
         {
-            var updateResult = await _roleService.UpdateRoleClaimsAsync(roleUpdateDto, roleUpdateDto.Claims);
+            var result = await _roleService.UpdateRoleClaimsAsync(roleUpdateDto, roleUpdateDto.Claims);
 
-            if (updateResult.Success)
-            {
-                return Ok(new { Message = "Role claims updated successfully." });
-            }
-
-            return BadRequest(new { Error = updateResult.Message });
+            return result.Success
+            ? Ok(result.Message)
+            : BadRequest(result.Message);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
