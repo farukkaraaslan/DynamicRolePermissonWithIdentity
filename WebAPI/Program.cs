@@ -12,6 +12,7 @@ using Core.Utilities.Security.JWT;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using DataAccess.Security;
+using Core.Utilities.IoC;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,7 @@ builder.Services
             IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
         };
     });
+   ServiceTool.Create(builder.Services);
 
 #endregion
 
@@ -55,17 +57,12 @@ builder.Host.ConfigureContainer<ContainerBuilder>(builder2 =>
 
 #endregion
 
-
-
-
-
+builder.Services.AddSingleton<IHttpContextAccessor,HttpContextAccessor>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
-
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -73,6 +70,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+#region Seed Role and Permission Data
 
 using (var scope = app.Services.CreateScope())
 {
@@ -94,6 +92,10 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning(ex, "An error occurred seeding the DB");
     }
 }
+
+#endregion
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 

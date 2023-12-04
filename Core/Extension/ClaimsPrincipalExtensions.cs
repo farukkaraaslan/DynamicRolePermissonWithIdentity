@@ -19,4 +19,9 @@ public static class ClaimsPrincipalExtensions
     {
         return claimsPrincipal?.Claims(ClaimTypes.Role);
     }
+
+    public static List<string> ClaimPermissions(this ClaimsPrincipal claimsPrincipal)
+    {
+        return claimsPrincipal?.Claims("Permissions");
+    }
 }

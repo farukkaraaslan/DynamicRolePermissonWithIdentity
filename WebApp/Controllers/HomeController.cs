@@ -103,7 +103,6 @@ namespace WebApp.Controllers
         {
             var client = _httpClientFactory.CreateClient();
 
-            // Talepleri çekmek için HTTP isteği yap
             var claimsResponseMessage = await client.GetAsync("http://localhost:5290/api/Claims");
 
             if (claimsResponseMessage.IsSuccessStatusCode)
@@ -113,7 +112,6 @@ namespace WebApp.Controllers
 
                 if (claimsApiResponse.Success)
                 {
-                    // Rolleri çekmek için HTTP isteği yap
                     var roleResponseMessage = await client.GetAsync($"http://localhost:5290/api/Roles/{id}");
 
                     if (roleResponseMessage.IsSuccessStatusCode)
@@ -134,7 +132,7 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update(string id, UpdateRoleDto updateRoleDto, List<string> Claims)
+        public async Task<IActionResult> Update( UpdateRoleDto updateRoleDto, List<string> Claims)
         {
             try
             {

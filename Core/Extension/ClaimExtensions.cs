@@ -29,4 +29,32 @@ public static class ClaimExtensions
     {
         roles.ToList().ForEach(role => claims.Add(new Claim(ClaimTypes.Role, role)));
     }
+
+    public static void AddRoleClaim(this ICollection<Claim> claims, string role, string claimValue)
+    {
+        // Eğer bu role için bir claim yoksa, yeni bir liste oluştur
+        var roleClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role && c.Value == role);
+        if (roleClaim == null)
+        {
+            roleClaim = new Claim(ClaimTypes.Role, role);
+            claims.Add(roleClaim);
+        }
+
+        // Role'a ait claim'leri ekleyin
+        roleClaim.Properties.AddClaim(claimValue);
+    }
+    public static void AddClaim(this IDictionary<string, string> properties, string value)
+    {
+        // "claims" adında bir özel bir property kullanarak claim'leri listeleyin
+        const string claimsKey = "claims";
+
+        if (properties.ContainsKey(claimsKey))
+        {
+            properties[claimsKey] += $",{value}";
+        }
+        else
+        {
+            properties[claimsKey] = value;
+        }
+    }
 }

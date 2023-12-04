@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Core.Entities.Concrete;
 
-public class UserRole :IdentityRole<Guid>
+public class RoleCliam: IdentityRoleClaim<int>
 {
-
 }

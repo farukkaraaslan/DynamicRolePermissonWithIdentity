@@ -15,8 +15,8 @@ namespace Business.Concrete;
 public class AuthManager : IAuthService
 {
     private readonly UserManager<User> _userManager;
-    private IUserService _userService;
-    private ITokenHelper _tokenHelper;
+    private readonly IUserService _userService;
+    private readonly ITokenHelper _tokenHelper;
 
     public AuthManager(UserManager<User> userManager, IUserService userService, ITokenHelper tokenHelper)
     {

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -17,13 +18,14 @@ namespace Core.Utilities.Security.JWT;
 public class JwtHelper : ITokenHelper
 {
     public IConfiguration Configuration { get; }
-    private TokenOptions _tokenOptions;
+    private readonly TokenOptions _tokenOptions;
     private DateTime _accessTokenExpiration;
-    public JwtHelper(IConfiguration configuration)
+    private readonly RoleManager<UserRole> _roleManager;
+    public JwtHelper(IConfiguration configuration, RoleManager<UserRole> roleManager)
     {
         Configuration = configuration;
         _tokenOptions = Configuration.GetSection("TokenOptions").Get<TokenOptions>();
-
+        _roleManager = roleManager;
     }
     public AccessToken CreateToken(User user, List<UserRole> role)
     {
@@ -56,13 +58,28 @@ public class JwtHelper : ITokenHelper
         return jwt;
     }
 
-    private IEnumerable<Claim> SetClaims(User user, List<UserRole> role)
+    private IEnumerable<Claim> SetClaims(User user, List<UserRole> roles)
     {
         var claims = new List<Claim>();
         claims.AddNameIdentifier(user.Id.ToString());
         claims.AddEmail(user.Email);
         claims.AddName($"{user.Name} {user.LastName}");
-        claims.AddRoles(role.Select(c => c.Name).ToArray());
+   
+        foreach (var rolename in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, rolename.Name));
+
+            var roleobj = _roleManager.FindByNameAsync(rolename.Name);
+            if (roleobj != null)
+            {
+                var roleclaims = _roleManager.GetClaimsAsync(roleobj.Result);
+
+                foreach (var roleclaim in roleclaims.Result)
+                {
+                    claims.Add(roleclaim);
+                }
+            }
+        }
 
         return claims;
     }

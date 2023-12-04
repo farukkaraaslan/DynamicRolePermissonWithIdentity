@@ -1,4 +1,5 @@
 ﻿using Business.Abstract;
+using Business.BusinessAspects;
 using Business.Dto;
 using Core.Entities.Concrete;
 using Core.Utilities.Results;
@@ -15,8 +16,10 @@ public class AppRoleManager : IRoleService
     {
         _roleManager = roleManager;
     }
+
     public IDataResult<List<RoleWithClaimsDto>> GetRoles()
     {
+
         var roles = _roleManager.Roles.ToList();
         var rolesWithClaims = new List<RoleWithClaimsDto>();
 
@@ -130,6 +133,8 @@ public class AppRoleManager : IRoleService
         return IdentityResult.Success;
     }
 
+
+    [SecuredOperation("Permissions.Blogs.Create,Super-Admin")]
     public async Task<IDataResult<RoleResponseDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);

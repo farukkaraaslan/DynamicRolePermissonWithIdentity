@@ -74,7 +74,7 @@ namespace DataAccess.Security
                     {
                         await userManager.CreateAsync(defaultUser, "123Pa$$word!");
                         await userManager.AddToRoleAsync(defaultUser, Roles.User);
-                        await userManager.AddToRoleAsync(defaultUser, Roles.Admin);
+                        await userManager.AddToRoleAsync(defaultUser, Roles.SuperAdmin);
                         await IdentityRoleExtensions.SeedClaimsForSuperAdmin(roleManager);
                     }
                 }

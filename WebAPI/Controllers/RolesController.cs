@@ -10,7 +10,7 @@ namespace WebAPI.Controllers
 
     public class RolesController : ControllerBase
     {
-        private IRoleService _roleService;
+        private readonly IRoleService _roleService;
 
         public RolesController(IRoleService roleService)
         {
