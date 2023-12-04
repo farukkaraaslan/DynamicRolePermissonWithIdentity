@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Business.Dto;
+﻿namespace Business.Dto;
 
 public class RoleRequestDto
 {
     public string Name { get; set; }
-    public List<string> Claims { get; set; }
+    public List<ClaimDto> Claims { get; set; }
 }
