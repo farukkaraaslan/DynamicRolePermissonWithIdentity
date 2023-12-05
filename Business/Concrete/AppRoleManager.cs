@@ -45,6 +45,7 @@ public class AppRoleManager : IRoleService
     public async Task<IDataResult<RoleResponseDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
+
         var claims = await _roleManager.GetClaimsAsync(role);
         var roleResponseDto = new RoleResponseDto
         {
@@ -64,11 +65,11 @@ public class AppRoleManager : IRoleService
     }
     public async Task<IResult> CreateAsync(RoleRequestDto roleDto)
     {
-        IResult result = BusinessRules.Run(CheckIfRoleNameExists(roleDto.Name));
-        if (!result.Success)
-        {
-            return result;
-        }
+        //IResult result = BusinessRules.Run( CheckIfRoleNameExists(roleDto.Name));
+        //if (!result.Success)
+        //{
+        //    return result;
+        //}
 
         var newRole = new UserRole
         {
@@ -91,7 +92,7 @@ public class AppRoleManager : IRoleService
     }
     public async Task<IResult> UpdateRoleClaimsAsync(RoleUpdateDto roleUpdateDto, List<ClaimDto> claims)
     {
-        IResult result = BusinessRules.Run(CheckIfRoleExistsById(roleUpdateDto.Id.ToString()), CheckIfRoleNameExists(roleUpdateDto.Name));
+        IResult result = BusinessRules.Run(CheckIfSuperAdminExists(roleUpdateDto.Name),CheckIfRoleExistsById(roleUpdateDto.Id.ToString()), CheckIfRoleNameExists(roleUpdateDto.Name));
         if (!result.Success)
         {
             return result;
@@ -117,7 +118,7 @@ public class AppRoleManager : IRoleService
 
     }
 
-    public IResult CheckIfRoleExistsById(string id)
+  private IResult CheckIfRoleExistsById(string id)
     {
         var existingRole = _roleManager.FindByIdAsync(id).Result;
         if (existingRole == null)
@@ -127,11 +128,23 @@ public class AppRoleManager : IRoleService
         return new SuccessResult();
     }
 
-    public IResult CheckIfRoleNameExists(string roleName)
+    private IResult CheckIfRoleNameExists(string roleName)
+    {
+        var existingRole= _roleManager.FindByNameAsync(roleName).Result;
+        if (existingRole == null)
+        {
+            var result = new SuccessResult();
+            return result;
+            
+           
+        }
+        return new ErrorResult(Messages.Role.AlreadyExists);
+    }
+    private IResult CheckIfSuperAdminExists(string roleName)
     {
         var existingRole = _roleManager.FindByNameAsync(roleName).Result;
-        return existingRole != null
-            ? new ErrorResult(Messages.Role.AlreadyExists)
+        return existingRole.Name == "Super-Admin"
+            ? new ErrorResult(Messages.Role.NotUpdateSuperAdmin)
             : new SuccessResult();
     }
     private async Task<IResult> RemoveClaimsToRole(UserRole? existingRole, IList<Claim> existingClaims)

@@ -9,62 +9,62 @@ namespace WebApp.Controllers
 {
     public class RoleController : Controller
     {
+        private readonly ApiCaller _apiCaller;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public RoleController(IHttpClientFactory httpClientFactory)
+        public RoleController(ApiCaller apiCaller, IHttpClientFactory httpClientFactory)
         {
+            _apiCaller = apiCaller;
             _httpClientFactory = httpClientFactory;
         }
 
         public async Task<IActionResult> Index()
         {
-            var client = _httpClientFactory.CreateClient();
-            var response = await client.GetAsync("http://localhost:5290/api/Roles");
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var jsonData = await response.Content.ReadAsStringAsync();
-
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleDto>>(jsonData);
-
-                if (apiResponse.Success)
-                {
-                    return View(apiResponse.Data);
-                }
-                else
-                {
-                    ViewBag.ErrorMessage = apiResponse.Message;
-                    return View("Error");
-                }
+                var roles = await _apiCaller.GetAsync<List<RoleDto>>("Roles");
+                return View(roles.Data);
             }
-
-            return View("Error");
+            catch (ApiException ex)
+            {
+                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
+                return View("Error");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
+                return View("Error");
+            }
         }
 
 
         public async Task<IActionResult> Create()
         {
-            var client = _httpClientFactory.CreateClient();
-            var responseMessage = await client.GetAsync("http://localhost:5290/api/Claims");
-
-            if (responseMessage.IsSuccessStatusCode)
+            try
             {
-                var jsonData = await responseMessage.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<ClaimDto>>(jsonData);
+                var claims = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
 
-                if (apiResponse.Success)
+                if (claims.Success)
                 {
-                    ViewBag.AllClaims = apiResponse.Data; // Değişiklik burada
+                    ViewBag.AllClaims = claims.Data;
                     return View();
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = apiResponse.Message;
+                    ViewBag.ErrorMessage = claims.Message;
                     return View("Error");
                 }
             }
-
-            return View("Error");
+            catch (ApiException ex)
+            {
+                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
+                return View("Error");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
+                return View("Error");
+            }
         }
         [HttpPost]
         public async Task<IActionResult> Create(RoleRequestDto roleRequestDto, List<string> Claims)
@@ -104,82 +104,81 @@ namespace WebApp.Controllers
 
         public async Task<IActionResult> Update(string id)
         {
-            var client = _httpClientFactory.CreateClient();
-
-            var claimsResponseMessage = await client.GetAsync("http://localhost:5290/api/Claims");
-
-            if (claimsResponseMessage.IsSuccessStatusCode)
+            try
             {
-                var claimsJsonData = await claimsResponseMessage.Content.ReadAsStringAsync();
-                var claimsApiResponse = JsonConvert.DeserializeObject<ApiResponse<ClaimDto>>(claimsJsonData);
+                var claims = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
 
-                if (claimsApiResponse.Success)
+                if (!claims.Success)
                 {
-                    var roleResponseMessage = await client.GetAsync($"http://localhost:5290/api/Roles/{id}");
+                    ViewBag.ErrorMessage = $"Failed to retrieve claims: {claims.Message}";
+                    return View("Error");
+                }
 
-                    if (roleResponseMessage.IsSuccessStatusCode)
-                    {
-                        var roleJsonData = await roleResponseMessage.Content.ReadAsStringAsync();
-                        var roleApiResponse = JsonConvert.DeserializeObject<ApiResponseSingle<UpdateRoleDto>>(roleJsonData);
+                ViewBag.AllClaims = claims.Data;
 
-                        if (roleApiResponse.Success)
-                        {
-                            ViewBag.AllClaims = claimsApiResponse.Data;
-                            return View(roleApiResponse.Data);
-                        }
-                    }
+                var role = await _apiCaller.GetAsync<UpdateRoleDto>($"Roles/{id}");
+
+                if (role.Success)
+                {
+                    return View(role.Data);
+                }
+                else
+                {
+                    ViewBag.ErrorMessage = $"Failed to retrieve role: {role.Message}";
+                    return View();
                 }
             }
-
-            return View("Error");
+            catch (ApiException ex)
+            {
+                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
+                return View();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
+                return View();
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update(UpdateRoleDto updateRoleDto, List<string> Claims)
+        public async Task<IActionResult> Update(UpdateRoleDto updateRoleDto, List<string> claims)
         {
             try
             {
                 // Mevcut olan claimleri çıkar
-                var existingClaims = updateRoleDto.Claims.Where(c => !Claims.Contains(c.Value)).ToList();
+                var existingClaims = updateRoleDto.Claims.Where(c => !claims.Contains(c.Value)).ToList();
 
                 // Yeni seçilen claimleri ekle (ancak daha önce eklenmemiş olanları)
-                var newClaims = Claims.Except(updateRoleDto.Claims.Select(c => c.Value)).Select(claimValue => new ClaimDto { Type = "Permissions", Value = claimValue }).ToList();
+                var newClaims = claims.Except(updateRoleDto.Claims.Select(c => c.Value)).Select(claimValue => new ClaimDto { Type = "Permissions", Value = claimValue }).ToList();
 
                 // Mevcut claimleri ve yeni seçilen claimleri birleştir
                 updateRoleDto.Claims = existingClaims.Concat(newClaims).ToList();
 
-                var client = _httpClientFactory.CreateClient();
+                // API'ye PUT isteği gönder
+                var response = await _apiCaller.PutAsync<ApiResponse<RoleDto>>("Roles", updateRoleDto);
 
-                // JSON formatına çevir
-                var roleJson = JsonConvert.SerializeObject(updateRoleDto);
-                var roleContent = new StringContent(roleJson, Encoding.UTF8, "application/json");
-
-                var response = await client.PutAsync($"http://localhost:5290/api/Roles", roleContent);
-
-                if (response.IsSuccessStatusCode)
+                if (response.Success)
                 {
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    var errorMessage = "Role update failed. Please try again.";
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(responseContent))
-                    {
-                        errorMessage += $" Details: {responseContent}";
-                    }
-
-                    Console.WriteLine(errorMessage);
+                    ViewBag.ErrorMessage = $"Role update failed: {response.Message}";
+                    return View("Error");
                 }
+            }
+            catch (ApiException ex)
+            {
+                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
+                return View("Error");
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"An error occurred while updating the role: {ex.Message}";
+                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
                 return View("Error");
             }
-
-            return View("Error");
         }
     }
 }
+
 

@@ -7,6 +7,12 @@
 <div class="col-12 grid-margin stretch-card">
     <div class="card">
         <div class="card-body">
+            @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @ViewBag.ErrorMessage
+                </div>
+            }
             <form asp-action="Update" method="post">
                 <div class="form-group">
                     <label for="Name" class="control-label">Role Name</label>

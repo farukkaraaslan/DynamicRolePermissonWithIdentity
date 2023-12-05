@@ -49,6 +49,6 @@ public class AuthManager : IAuthService
         {
             return new ErrorResult("Kullanıcı adı veya parola hatalı.");
         }
-        return new SuccessResult("Griş işlemi başarılı.");
+        return new SuccessResult("Giriş işlemi başarılı.");
     }
 }
