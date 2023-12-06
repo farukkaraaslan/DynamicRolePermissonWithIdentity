@@ -1,4 +1,5 @@
 ﻿using Business.Abstract;
+using Business.Dto.Claim;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers;
@@ -17,7 +18,24 @@ public class ClaimsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetClaims()
     {
-        var result = await _claimService.GetClaims();
+        var result = await _claimService.GetClaimsAsync();
+        return result.Success
+               ? Ok(result)
+               : BadRequest(result.Message);
+    }
+    [HttpPost]
+    public async Task<IActionResult> AddRoleClaims(string id, List<ClaimDto> claims)
+    {
+        var result = await _claimService.AddRoleClaimsAsync(id, claims);
+        return result.Success
+               ? Ok(result)
+               : BadRequest(result.Message);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateRoleClaims(string id, List<ClaimDto> claims)
+    {
+        var result = await _claimService.UpdateRoleClaimsAsync(id, claims);
         return result.Success
                ? Ok(result)
                : BadRequest(result.Message);

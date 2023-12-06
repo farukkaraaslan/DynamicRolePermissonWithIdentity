@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Business.Dto;
+namespace Business.Dto.Claim;
 
 public class ClaimDto
 {

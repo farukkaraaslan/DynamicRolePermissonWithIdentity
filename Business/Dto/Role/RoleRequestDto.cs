@@ -1,7 +1,6 @@
-﻿namespace WebApp.Models.Role;
+﻿namespace Business.Dto.Role;
 
 public class RoleRequestDto
 {
-    public string Id { get; set; }
     public string Name { get; set; }
 }

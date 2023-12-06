@@ -30,11 +30,11 @@ public class AppUserManager : IUserService
         }
         return new SuccessResult("Kullanıcı oluşturuldu.");
     }
-    public async Task<IResult> UpdateAsync(UserUpdateDto userUpdateDto)
+    public async Task<IResult> UpdateAsync(string id, UserUpdateDto userUpdateDto)
     {
         var user = _mapper.Map<User>(userUpdateDto);
 
-        var existingUser = await GetByIdAsync(user.Id.ToString());
+        var existingUser = await GetByIdAsync(id);
 
         await _userManager.UpdateAsync(existingUser.Data);
 
@@ -60,9 +60,9 @@ public class AppUserManager : IUserService
         var result = await _userManager.ChangePasswordAsync(user.Data, changePasswordDto.Password, changePasswordDto.PassworcConfirm);
 
         if (!result.Succeeded)
-          {
+        {
             return new IdentityResultErrors(result);
-           }
+        }
 
         return new SuccessResult("Parola değiştirildi.");
     }
@@ -90,7 +90,7 @@ public class AppUserManager : IUserService
     public async Task<IDataResult<List<UserRole>>> GetRoleAsync(string userName)
     {
         var user = await _userManager.FindByNameAsync(userName);
-        if (user== null)
+        if (user == null)
         {
             return new ErrorDataResult<List<UserRole>>("Kullanıcı bulunamadı.");
         }

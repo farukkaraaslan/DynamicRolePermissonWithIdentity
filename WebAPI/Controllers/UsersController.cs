@@ -1,9 +1,5 @@
 ﻿using Business.Abstract;
 using Business.Dto;
-using Core.Utilities.Results;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -95,10 +91,10 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UserUpdateDto model)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] UserUpdateDto model)
         {
-            var result = await _userService.UpdateAsync(model);
+            var result = await _userService.UpdateAsync(id, model);
             if (result.Success)
             {
                 return Ok(result);
@@ -106,7 +102,7 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpDelete("id")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var result = await _userService.DeleteAsync(id);
@@ -116,6 +112,6 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
-     
+
     }
 }

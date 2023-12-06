@@ -1,5 +1,5 @@
 ﻿using Business.Abstract;
-using Business.Dto;
+using Business.Dto.Role;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -16,33 +16,15 @@ namespace WebAPI.Controllers
         {
             _roleService = roleService;
         }
-        [HttpPost]
-        public async Task<IActionResult> CreateRole([FromBody] RoleRequestDto roleDto)
-        {
-            var result = await _roleService.CreateAsync(roleDto);
-
-            return result.Success
-                ? Ok(result.Message)
-                : BadRequest(result.Message);
-        }
 
         [HttpGet()]
-        public IActionResult GetRoles()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _roleService.GetAll();
+            var result = await _roleService.GetAll();
 
             return result.Success
                 ? Ok(result)
                 : BadRequest(result.Message);
-        }
-        [HttpPut()]
-        public async Task<IActionResult> UpdateRoleClaims([FromBody] RoleUpdateDto roleUpdateDto)
-        {
-            var result = await _roleService.UpdateRoleClaimsAsync(roleUpdateDto, roleUpdateDto.Claims);
-
-            return result.Success
-            ? Ok(result.Message)
-            : BadRequest(result.Message);
         }
 
         [HttpGet("{id}")]
@@ -50,8 +32,38 @@ namespace WebAPI.Controllers
         {
             var result = await _roleService.GetByIdAsync(id.ToString());
             return result.Success
-            ? Ok(result)
-            : BadRequest(result.Message);
+                ? Ok(result)
+                : BadRequest(result.Message);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] RoleRequestDto roleDto)
+        {
+            var result = await _roleService.CreateAsync(roleDto);
+
+            return result.Success
+                ? Ok(result)
+                : BadRequest(result.Message);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] RoleRequestDto roleRequestDto)
+        {
+            var result = await _roleService.UpdateAsync(id, roleRequestDto);
+
+            return result.Success
+                ? Ok(result)
+                : BadRequest(result.Message);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var result = await _roleService.DeleteAsync(id);
+
+            return result.Success
+                ? Ok(result)
+                : BadRequest(result.Message);
         }
     }
 }
