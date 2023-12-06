@@ -1,12 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Text;
+using WebApp.Models;
 
-public class ApiResponse<T>
-{
-    public bool Success { get; set; }
-    public string Message { get; set; }
-    public T Data { get; set; }
-}
 
 public class ApiCaller
 {
@@ -17,7 +12,7 @@ public class ApiCaller
         _httpClientFactory = httpClientFactory;
     }
 
-    private async Task<T> SendRequestAsync<T>(string endpoint, HttpMethod method, object content = null)
+    private async Task<ApiResponse<T>> SendRequestAsync<T>(string endpoint, HttpMethod method, object content = null)
     {
         using var client = _httpClientFactory.CreateClient();
         var request = new HttpRequestMessage(method, $"http://localhost:5290/api/{endpoint}");
@@ -36,7 +31,9 @@ public class ApiCaller
         }
 
         var jsonData = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<T>(jsonData);
+        var apiResponse = JsonConvert.DeserializeObject<ApiResponse<T>>(jsonData);
+
+        return apiResponse;
     }
 
     private async Task HandleError(HttpResponseMessage response)
@@ -45,24 +42,25 @@ public class ApiCaller
         throw new ApiException($"API request failed. Status Code: {response.StatusCode}, Error Message: {errorMessage}");
     }
 
+
     public Task<ApiResponse<T>> GetAsync<T>(string endpoint)
     {
-        return SendRequestAsync<ApiResponse<T>>(endpoint, HttpMethod.Get);
+        return SendRequestAsync<T>(endpoint, HttpMethod.Get);
     }
 
     public Task<ApiResponse<T>> PostAsync<T>(string endpoint, object content)
     {
-        return SendRequestAsync<ApiResponse<T>>(endpoint, HttpMethod.Post, content);
+        return SendRequestAsync<T>(endpoint, HttpMethod.Post, content);
     }
 
     public Task<ApiResponse<T>> PutAsync<T>(string endpoint, object content)
     {
-        return SendRequestAsync<ApiResponse<T>>(endpoint, HttpMethod.Put, content);
+        return SendRequestAsync<T>(endpoint, HttpMethod.Put, content);
     }
 
     public Task<ApiResponse<T>> DeleteAsync<T>(string endpoint)
     {
-        return SendRequestAsync<ApiResponse<T>>(endpoint, HttpMethod.Delete);
+        return SendRequestAsync<T>(endpoint, HttpMethod.Delete);
     }
 }
 

@@ -42,30 +42,41 @@ namespace WebApp.Controllers
         {
             try
             {
-                var claims = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
-
-                if (claims.Success)
+                // Eğer TempData'de varsa, onu kullan
+                if (TempData.ContainsKey("AllClaims"))
                 {
-                    ViewBag.AllClaims = claims.Data;
-                    return View();
+                    ViewBag.AllClaims = TempData["AllClaims"];
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = claims.Message;
-                    return View("Error");
+                    // TempData'de yoksa API'den çek
+                    var claims = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
+
+                    if (claims.Success)
+                    {
+                        ViewBag.AllClaims = claims.Data;
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = claims.Message;
+                        return View("Error");
+                    }
                 }
+
+                return View();
             }
             catch (ApiException ex)
             {
-                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
+                TempData["ErrorMessage"] = $"An API error occurred: {ex.Message}";
                 return View("Error");
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
                 return View("Error");
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> Create(RoleRequestDto roleRequestDto, List<string> Claims)
         {
@@ -77,30 +88,27 @@ namespace WebApp.Controllers
                     Claims = Claims?.Select(claimValue => new ClaimDto { Type = "Permissions", Value = claimValue }).ToList() ?? new List<ClaimDto>()
                 };
 
-                // JSON formatına çevir
-                var roleJson = JsonConvert.SerializeObject(roleDto);
-                var roleContent = new StringContent(roleJson, Encoding.UTF8, "application/json");
+                var response = await _apiCaller.PostAsync<RoleDto>("Roles", roleDto);
 
-                // API'ye POST isteği gönder
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsync("http://localhost:5290/api/Roles", roleContent);
-
-                if (response.IsSuccessStatusCode)
+                if (response.Success)
                 {
-                    return RedirectToAction("Index");
+                    // TempData'yi kullanmak yerine doğrudan GET metodunu çağır ve veriyi çek
+                    return await Create();
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = "Role creation failed. Please try again.";
+                    TempData["ErrorMessage"] = $"Role creation failed: {response.Message}";
                     return View("Error");
                 }
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"An error occurred while creating the role: {ex.Message}";
+                TempData["ErrorMessage"] = $"An error occurred while creating the role: {ex.Message}";
                 return View("Error");
             }
         }
+
+
 
         public async Task<IActionResult> Update(string id)
         {
@@ -110,8 +118,8 @@ namespace WebApp.Controllers
 
                 if (!claims.Success)
                 {
-                    ViewBag.ErrorMessage = $"Failed to retrieve claims: {claims.Message}";
-                    return View("Error");
+                    TempData["ErrorMessage"] = $"Failed to retrieve claims: {claims.Message}";
+                    return RedirectToAction("Error");
                 }
 
                 ViewBag.AllClaims = claims.Data;
@@ -120,25 +128,27 @@ namespace WebApp.Controllers
 
                 if (role.Success)
                 {
-                    return View(role.Data);
+                    TempData["SuccessMessage"] = "Role updated successfully.";
+                    return RedirectToAction("Index");
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = $"Failed to retrieve role: {role.Message}";
-                    return View();
+                    TempData["ErrorMessage"] = $"Failed to retrieve role: {role.Message}";
+                    return RedirectToAction("Error");
                 }
             }
             catch (ApiException ex)
             {
-                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
-                return View();
+                TempData["ErrorMessage"] = $"An API error occurred: {ex.Message}";
+                return RedirectToAction("Error");
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
-                return View();
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+                return RedirectToAction("Error");
             }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Update(UpdateRoleDto updateRoleDto, List<string> claims)
@@ -159,23 +169,43 @@ namespace WebApp.Controllers
 
                 if (response.Success)
                 {
+                    // Başarılı ise kullanıcıya mesaj göster
+                    TempData["SuccessMessage"] = "Role updated successfully.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = $"Role update failed: {response.Message}";
-                    return View("Error");
+                    if (response.Data != null)
+                    {
+                        var apiResponse = response.Data;
+                        // Başarısız ise kullanıcıya hata mesajını göster
+                        TempData["ErrorMessage"] = $"Role update failed: {apiResponse.Message}";
+                    }
+                    else
+                    {
+                        // Bilinmeyen bir hata durumunda kullanıcıya genel bir hata mesajı göster
+                        TempData["ErrorMessage"] = "Role update failed: An unknown error occurred.";
+                    }
+
+                    // Hata durumunda kullanıcıyı aynı sayfaya yönlendir
+                    return RedirectToAction("Update");
                 }
             }
             catch (ApiException ex)
             {
-                ViewBag.ErrorMessage = $"An API error occurred: {ex.Message}";
-                return View("Error");
+                // API'den gelen hata durumunda kullanıcıya genel bir hata mesajı göster
+                TempData["ErrorMessage"] = $"An API error occurred: {ex.Message}";
+
+                // Hata durumunda kullanıcıyı aynı sayfaya yönlendir
+                return RedirectToAction("Update");
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"An unexpected error occurred: {ex.Message}";
-                return View("Error");
+                // Beklenmeyen bir hata durumunda kullanıcıya genel bir hata mesajı göster
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+
+                // Hata durumunda kullanıcıyı aynı sayfaya yönlendir
+                return RedirectToAction("Update");
             }
         }
     }

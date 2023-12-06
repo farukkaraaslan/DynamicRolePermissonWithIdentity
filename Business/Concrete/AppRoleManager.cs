@@ -20,7 +20,6 @@ public class AppRoleManager : IRoleService
 
     public IDataResult<List<RoleWithClaimsDto>> GetAll()
     {
-
         var roles = _roleManager.Roles.ToList();
         var rolesWithClaims = new List<RoleWithClaimsDto>();
 
@@ -42,6 +41,7 @@ public class AppRoleManager : IRoleService
 
         return new SuccessDataResult<List<RoleWithClaimsDto>>(rolesWithClaims, Messages.Role.Listed);
     }
+
     public async Task<IDataResult<RoleResponseDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
@@ -61,15 +61,18 @@ public class AppRoleManager : IRoleService
         return role == null
             ? new ErrorDataResult<RoleResponseDto>(Messages.Role.NotFound)
             : new SuccessDataResult<RoleResponseDto>(roleResponseDto);
-
     }
+
     public async Task<IResult> CreateAsync(RoleRequestDto roleDto)
     {
-        //IResult result = BusinessRules.Run( CheckIfRoleNameExists(roleDto.Name));
-        //if (!result.Success)
-        //{
-        //    return result;
-        //}
+        var result = await BusinessRules.RunAsync(
+            CheckDuplicateRoleName(roleDto.Name, null)
+        );
+
+        if (!result.Success)
+        {
+            return result;
+        }
 
         var newRole = new UserRole
         {
@@ -77,7 +80,6 @@ public class AppRoleManager : IRoleService
         };
 
         var createRoleResult = await _roleManager.CreateAsync(newRole);
-
 
         if (!createRoleResult.Succeeded)
         {
@@ -87,19 +89,25 @@ public class AppRoleManager : IRoleService
         await AddNewClaimsToRole(roleDto.Claims, newRole);
 
         return new SuccessResult(Messages.Role.Created);
-
-
     }
+
     public async Task<IResult> UpdateRoleClaimsAsync(RoleUpdateDto roleUpdateDto, List<ClaimDto> claims)
     {
-        IResult result = BusinessRules.Run(CheckIfSuperAdminExists(roleUpdateDto.Name),CheckIfRoleExistsById(roleUpdateDto.Id.ToString()), CheckIfRoleNameExists(roleUpdateDto.Name));
+        var result = await BusinessRules.RunAsync(
+            CheckExistingRole(roleUpdateDto.Id.ToString()),
+            CheckSuperAdminRole(roleUpdateDto.Id),
+            CheckDuplicateRoleName(roleUpdateDto.Name, roleUpdateDto.Id.ToString())
+        );
+
         if (!result.Success)
         {
             return result;
         }
 
-        var existingRole = new UserRole();
-        existingRole.Name = roleUpdateDto.Name;
+        var existingRole = new UserRole
+        {
+            Name = roleUpdateDto.Name
+        };
 
         var existingClaims = await _roleManager.GetClaimsAsync(existingRole);
 
@@ -112,41 +120,44 @@ public class AppRoleManager : IRoleService
         if (!updateRoleResult.Succeeded)
         {
             foreach (var error in updateRoleResult.Errors)
+            {
                 return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+            }
         }
-        return new SuccessResult(Messages.Role.UpdatedSuccessfully);
 
+        return new SuccessResult(Messages.Role.UpdatedSuccessfully);
     }
 
-  private IResult CheckIfRoleExistsById(string id)
+    private async Task<IResult> CheckExistingRole(string roleId)
     {
-        var existingRole = _roleManager.FindByIdAsync(id).Result;
-        if (existingRole == null)
+        var existingRole = await _roleManager.FindByIdAsync(roleId);
+        return existingRole == null ? new ErrorResult("Role not found") : new SuccessResult();
+    }
+
+    private async Task<IResult> CheckSuperAdminRole(string roleId)
+    {
+        var superAdminRole = await _roleManager.FindByNameAsync("Super-Admin");
+
+        if (superAdminRole != null && roleId == superAdminRole.Id.ToString())
         {
-            return new ErrorResult(Messages.Role.NotFound);
+            return new ErrorResult(Messages.Role.NotUpdateSuperAdmin);
         }
+
         return new SuccessResult();
     }
 
-    private IResult CheckIfRoleNameExists(string roleName)
+    private async Task<IResult> CheckDuplicateRoleName(string newRoleName, string roleId)
     {
-        var existingRole= _roleManager.FindByNameAsync(roleName).Result;
-        if (existingRole == null)
+        var existingRole = await _roleManager.FindByNameAsync(newRoleName);
+
+        if (existingRole != null && (roleId == null || existingRole.Id.ToString() != roleId))
         {
-            var result = new SuccessResult();
-            return result;
-            
-           
+            return new ErrorResult("Another role with the same name already exists");
         }
-        return new ErrorResult(Messages.Role.AlreadyExists);
+
+        return new SuccessResult();
     }
-    private IResult CheckIfSuperAdminExists(string roleName)
-    {
-        var existingRole = _roleManager.FindByNameAsync(roleName).Result;
-        return existingRole.Name == "Super-Admin"
-            ? new ErrorResult(Messages.Role.NotUpdateSuperAdmin)
-            : new SuccessResult();
-    }
+
     private async Task<IResult> RemoveClaimsToRole(UserRole? existingRole, IList<Claim> existingClaims)
     {
         foreach (var existingClaim in existingClaims)
@@ -155,11 +166,15 @@ public class AppRoleManager : IRoleService
             if (!removeClaimResult.Succeeded)
             {
                 foreach (var error in removeClaimResult.Errors)
+                {
                     return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+                }
             }
         }
+
         return new SuccessResult();
     }
+
     private async Task<IResult> AddNewClaimsToRole(List<ClaimDto> claims, UserRole? existingRole)
     {
         foreach (var newClaim in claims)
@@ -167,13 +182,16 @@ public class AppRoleManager : IRoleService
             var claim = new Claim("Permissions", newClaim.Value);
             var addClaimResult = await _roleManager.AddClaimAsync(existingRole, claim);
 
-
             if (!addClaimResult.Succeeded)
             {
                 foreach (var error in addClaimResult.Errors)
+                {
                     return new ErrorResult($"Failed to update role claims. {string.Join(", ", error.Description)}");
+                }
             }
         }
+
         return new SuccessResult();
     }
 }
+

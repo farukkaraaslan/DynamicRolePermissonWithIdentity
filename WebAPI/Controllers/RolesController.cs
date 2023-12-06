@@ -22,7 +22,7 @@ namespace WebAPI.Controllers
             var result = await _roleService.CreateAsync(roleDto);
 
             return result.Success
-                ? Ok(result.Message)
+                ? Ok(result)
                 : BadRequest(result.Message);
         }
 
@@ -41,7 +41,7 @@ namespace WebAPI.Controllers
             var result = await _roleService.UpdateRoleClaimsAsync(roleUpdateDto, roleUpdateDto.Claims);
 
             return result.Success
-            ? Ok(result.Message)
+            ? Ok(result)
             : BadRequest(result.Message);
         }
 
