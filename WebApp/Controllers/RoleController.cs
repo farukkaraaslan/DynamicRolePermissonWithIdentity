@@ -47,16 +47,18 @@ public class RoleController : Controller
         var addRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
 
         createRoleModel.Claims = addRoleClaims;
-        var response = await _apiCaller.PostAsync<RoleViewModel>("Roles", createRoleModel);
+        var response = await _apiCaller.PostAsync<CreateRoleModel>("Roles", createRoleModel);
 
         if (response.Success)
         {
-            return RedirectToAction("Index");
+            TempData["SuccessMessage"] = response.Message;
+            return RedirectToAction("Create");
         }
+
         else
         {
-            // Handle error
-            return RedirectToAction("Error");
+            TempData["ErrorMessage"] = response.Message;
+            return RedirectToAction("Create");
         }
     }
 
@@ -87,16 +89,17 @@ public class RoleController : Controller
         var updateRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
 
         updateRoleModel.Claims = updateRoleClaims;
-        var response = await _apiCaller.PutAsync<CreateRoleModel>($"Roles/{id}", updateRoleModel);
+        var response = await _apiCaller.PutAsync<UpdateRoleModel>($"Roles/{id}", updateRoleModel);
 
         if (response.Success)
         {
+            TempData["SuccessMessage"] = response.Message;
             return RedirectToAction("Index");
         }
         else
         {
-            // Handle error
-            return RedirectToAction("Error");
+            TempData["ErrorMessage"] = response.Message;
+            return RedirectToAction("Update");
         }
     }
 
@@ -120,12 +123,13 @@ public class RoleController : Controller
         var response = await _apiCaller.DeleteAsync<RoleViewModel>($"Roles/{id}");
         if (response.Success)
         {
+            TempData["SuccessMessage"] = response.Message;
             return RedirectToAction("Index");
         }
         else
         {
-            // Handle error
-            return RedirectToAction("Error");
+            TempData["ErrorMessage"] = response.Message;
+            return RedirectToAction("Index");
         }
     }
 }

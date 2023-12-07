@@ -12,6 +12,7 @@ public static class Messages
         public static string NotFound = "Role not found.";
         public static string UpdatedSuccessfully = "Role updated successfully.";
         public static string NotUpdateSuperAdmin = "Role Super-Admin not update.";
+        public static string NotDeleteSuperAdmin = "Role Super-Admin not delete.";
     }
     public static class Claims
     {

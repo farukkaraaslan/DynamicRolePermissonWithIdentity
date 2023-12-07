@@ -11,10 +11,21 @@
 <div class="col-12 grid-margin stretch-card">
     <div class="card">
         <div class="card-body">
-            @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+            @{
+                string errorMessage = TempData["ErrorMessage"] as string;
+                string successMessage = TempData["SuccessMessage"] as string;
+            }
+
+            @if (!string.IsNullOrEmpty(errorMessage))
             {
                 <div class="alert alert-danger" role="alert">
-                    @ViewData["ErrorMessage"]
+                    @errorMessage
+                </div>
+            } 
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" role="alert">
+                    @successMessage
                 </div>
             }
 

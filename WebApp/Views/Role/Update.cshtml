@@ -7,6 +7,24 @@
 <div class="col-12 grid-margin stretch-card">
     <div class="card">
         <div class="card-body">
+            @{
+                string errorMessage = TempData["ErrorMessage"] as string;
+                string successMessage = TempData["SuccessMessage"] as string;
+            }
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" role="alert">
+                    @successMessage
+                </div>
+            }
+
             <form asp-action="Update" asp-controller="Role" asp-route-id="@Model.Id" method="post">
                 <div class="form-group">
                     <label for="Name" class="control-label">Role Name</label>

@@ -24,7 +24,7 @@ namespace WebAPI.Controllers
 
             return result.Success
                 ? Ok(result)
-                : BadRequest(result.Message);
+                : BadRequest(result);
         }
 
         [HttpGet("{id}")]
@@ -33,7 +33,7 @@ namespace WebAPI.Controllers
             var result = await _roleService.GetByIdAsync(id.ToString());
             return result.Success
                 ? Ok(result)
-                : BadRequest(result.Message);
+                : BadRequest(result);
         }
 
         [HttpPost]
@@ -43,7 +43,7 @@ namespace WebAPI.Controllers
 
             return result.Success
                 ? Ok(result)
-                : BadRequest(result.Message);
+                : BadRequest(result);
         }
 
         [HttpPut("{id}")]
@@ -53,7 +53,7 @@ namespace WebAPI.Controllers
 
             return result.Success
                 ? Ok(result)
-                : BadRequest(result.Message);
+                : BadRequest(result);
         }
 
         [HttpDelete("{id}")]
@@ -63,7 +63,7 @@ namespace WebAPI.Controllers
 
             return result.Success
                 ? Ok(result)
-                : BadRequest(result.Message);
+                : BadRequest(result);
         }
     }
 }
