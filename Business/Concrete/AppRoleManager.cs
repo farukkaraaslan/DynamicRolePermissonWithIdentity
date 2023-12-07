@@ -63,11 +63,22 @@ public class AppRoleManager : IRoleService
 
         return new SuccessDataResult<RoleDto>(roleDto);
     }
-    public async Task<IResult> CreateAsync(RoleRequestDto roleDto)
+    public async Task<IResult> CreateAsync(RoleRequestDto roleRequestDto)
     {
-        var role = _mapper.Map<UserRole>(roleDto);
+        var role = _mapper.Map<UserRole>(roleRequestDto);
         var result = await _roleManager.CreateAsync(role);
 
+        foreach (var claim in roleRequestDto.Claims)
+        {
+
+            var newClaim = new Claim(claim.Type, claim.Value);
+            var addResult = await _roleManager.AddClaimAsync(role, newClaim);
+            if (!addResult.Succeeded)
+            {
+                return new ErrorResult(Messages.Claims.FailedAdded);
+            }
+
+        }
         return result.Succeeded != true
             ? new ErrorResult(Messages.Role.FailedCreate)
             : new SuccessResult(Messages.Role.Created);

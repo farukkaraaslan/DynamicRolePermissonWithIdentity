@@ -1,4 +1,4 @@
-﻿@model RoleRequestDto
+﻿@model CreateRoleModel
 @{
     ViewData["title"] = "Create";
     Layout = "~/views/shared/_layout.cshtml";
@@ -23,6 +23,19 @@
                     <label for="Name" class="control-label">Role Name</label>
                     <input type="text" asp-for="Name" class="form-control" />
                     <span class="text-danger"></span>
+                </div>
+                <label>Role Claims</label>
+                <div class="form-group">
+                    @foreach (var claim in ViewBag.Claims)
+                    {
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" name="Claims" value="@claim.Value">
+                                @claim.Value
+                                <i class="input-helper"></i>
+                            </label>
+                        </div>
+                    }
                 </div>
                 <button type="submit" class="btn btn-primary">Create</button>
             </form>

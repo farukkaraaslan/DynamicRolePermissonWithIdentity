@@ -2,7 +2,7 @@
 
 namespace WebApp.Models.Role
 {
-    public class UpdateRoleDto
+    public class UpdateRoleModel
     {
         public string Id { get; set; }
         public string Name { get; set; }

@@ -14,7 +14,7 @@ public class RoleController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var response = await _apiCaller.GetAsync<List<RoleDto>>("Roles");
+        var response = await _apiCaller.GetAsync<List<RoleViewModel>>("Roles");
         if (response.Success)
         {
             return View(response.Data);
@@ -25,30 +25,30 @@ public class RoleController : Controller
             return RedirectToAction("Error");
         }
     }
-
-    public async Task<IActionResult> Details(string id)
+    public async Task<IActionResult> Create()
     {
-        var response = await _apiCaller.GetAsync<RoleDto>($"Roles/{id}");
-        if (response.Success)
+
+        var claimsResponse = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
+        if (claimsResponse.Success)
         {
-            return View(response.Data);
+            ViewBag.Claims = claimsResponse.Data;
+            return View();
         }
         else
         {
-            // Handle error
             return RedirectToAction("Error");
         }
     }
 
-    public IActionResult Create()
-    {
-        return View();
-    }
-
     [HttpPost]
-    public async Task<IActionResult> Create(RoleRequestDto roleDto)
+    public async Task<IActionResult> Create(CreateRoleModel createRoleModel, List<string> claims)
     {
-        var response = await _apiCaller.PostAsync<RoleDto>("Roles", roleDto);
+
+        var addRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
+
+        createRoleModel.Claims = addRoleClaims;
+        var response = await _apiCaller.PostAsync<RoleViewModel>("Roles", createRoleModel);
+
         if (response.Success)
         {
             return RedirectToAction("Index");
@@ -62,7 +62,7 @@ public class RoleController : Controller
 
     public async Task<IActionResult> Update(string id)
     {
-        var roleResponse = await _apiCaller.GetAsync<RoleRequestDto>($"Roles/{id}");
+        var roleResponse = await _apiCaller.GetAsync<UpdateRoleModel>($"Roles/{id}");
         var claimsResponse = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
         if (roleResponse.Success && claimsResponse.Success)
         {
@@ -77,17 +77,17 @@ public class RoleController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Update(string id, RoleRequestDto roleRequestDto, List<string> claims)
+    public async Task<IActionResult> Update(string id, UpdateRoleModel updateRoleModel, List<string> claims)
     {
         if (!ModelState.IsValid)
         {
 
-            return View(roleRequestDto);
+            return View(updateRoleModel);
         }
-        var claimDtos = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
-        // RoleRequestDto'yu güncelle
-        roleRequestDto.Claims = claimDtos;
-        var response = await _apiCaller.PutAsync<RoleRequestDto>($"Roles/{id}", roleRequestDto);
+        var updateRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
+
+        updateRoleModel.Claims = updateRoleClaims;
+        var response = await _apiCaller.PutAsync<CreateRoleModel>($"Roles/{id}", updateRoleModel);
 
         if (response.Success)
         {
@@ -102,7 +102,7 @@ public class RoleController : Controller
 
     public async Task<IActionResult> Delete(string id)
     {
-        var response = await _apiCaller.GetAsync<RoleDto>($"Roles/{id}");
+        var response = await _apiCaller.GetAsync<RoleViewModel>($"Roles/{id}");
         if (response.Success)
         {
             return View(response.Data);
@@ -117,7 +117,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteConfirmed(string id)
     {
-        var response = await _apiCaller.DeleteAsync<RoleDto>($"Roles/{id}");
+        var response = await _apiCaller.DeleteAsync<RoleViewModel>($"Roles/{id}");
         if (response.Success)
         {
             return RedirectToAction("Index");
