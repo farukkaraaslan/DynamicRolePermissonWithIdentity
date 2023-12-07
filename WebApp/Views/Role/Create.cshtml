@@ -3,10 +3,22 @@
     ViewData["title"] = "Create";
     Layout = "~/views/shared/_layout.cshtml";
 }
+@{
+    var allClaims = TempData["AllClaims"] as List<ClaimDto>;
+}
+
+
 <div class="col-12 grid-margin stretch-card">
     <div class="card">
         <div class="card-body">
-            <form action="Create" method="post">
+            @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @ViewData["ErrorMessage"]
+                </div>
+            }
+
+            <form asp-action="Create" method="post">
                 <div class="form-group">
                     <label for="Name" class="control-label">Role Name</label>
                     <input type="text" asp-for="Name" class="form-control" />

@@ -48,7 +48,8 @@ namespace WebApp.Controllers
 
                 if (response.Success)
                 {
-                    return RedirectToAction("Index");
+                    // TempData'yi kullanmak yerine doğrudan GET metodunu çağır ve veriyi çek
+                    return await Create();
                 }
                 else
                 {
