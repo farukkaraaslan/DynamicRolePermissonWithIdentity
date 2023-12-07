@@ -36,7 +36,7 @@ public class ClaimManager : IClaimService
             var removeResult = await _roleManager.RemoveClaimAsync(role, claimToRemove);
             if (!removeResult.Succeeded)
             {
-                return new ErrorResult(Messages.Claim.FailedRemoved);
+                return new ErrorResult(Messages.Claims.FailedRemoved);
             }
         }
 
@@ -48,12 +48,12 @@ public class ClaimManager : IClaimService
                 var addResult = await _roleManager.AddClaimAsync(role, newClaim);
                 if (!addResult.Succeeded)
                 {
-                    return new ErrorResult(Messages.Claim.FailedAdded);
+                    return new ErrorResult(Messages.Claims.FailedAdded);
                 }
             }
         }
 
-        return new SuccessResult(Messages.Claim.Updated);
+        return new SuccessResult(Messages.Claims.Updated);
     }
 
     public async Task<IResult> AddRoleClaimsAsync(string roleId, List<ClaimDto> claimDtos)
@@ -65,10 +65,10 @@ public class ClaimManager : IClaimService
             var result = await _roleManager.AddClaimAsync(role, claim);
             if (!result.Succeeded)
             {
-                return new ErrorResult(Messages.Claim.FailedAdded);
+                return new ErrorResult(Messages.Claims.FailedAdded);
             }
         }
-        return new SuccessResult(Messages.Claim.Added);
+        return new SuccessResult(Messages.Claims.Added);
     }
 
     public async Task<IDataResult<List<ClaimDto>>> GetClaimsAsync()
@@ -78,7 +78,7 @@ public class ClaimManager : IClaimService
 
         var claimDtos = claims.Select(claim => new ClaimDto { Type = claim.Type, Value = claim.Value }).ToList();
 
-        return new SuccessDataResult<List<ClaimDto>>(claimDtos, Messages.Claim.Listed);
+        return new SuccessDataResult<List<ClaimDto>>(claimDtos, Messages.Claims.Listed);
 
     }
 }

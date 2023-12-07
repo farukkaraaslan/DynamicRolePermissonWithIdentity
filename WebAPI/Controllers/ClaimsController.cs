@@ -40,13 +40,4 @@ public class ClaimsController : ControllerBase
                ? Ok(result)
                : BadRequest(result.Message);
     }
-
-    [HttpPost]
-    public async Task<IActionResult> GetClaims(List<ClaimDto>claims ,string roleId)
-    {
-        var result = await _claimService.CreateAsync(claims,roleId);
-        return result.Success
-               ? Ok(result)
-               : BadRequest(result.Message);
-    }
 }

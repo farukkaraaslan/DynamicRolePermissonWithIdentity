@@ -13,7 +13,7 @@ public static class Messages
         public static string UpdatedSuccessfully = "Role updated successfully.";
         public static string NotUpdateSuperAdmin = "Role Super-Admin not update.";
     }
-    public static class Claim
+    public static class Claims
     {
         public static string Listed = "Claims successfully listed.";
         public static string Added = "Role claim added successfully.";

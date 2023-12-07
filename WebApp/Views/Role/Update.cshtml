@@ -10,13 +10,27 @@
             <form asp-action="Update" asp-controller="Role" asp-route-id="@Model.Id" method="post">
                 <div class="form-group">
                     <label for="Name" class="control-label">Role Name</label>
-                    
                     <input type="hidden" asp-for="Id" class="form-control" />
                     <input type="text" asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <label>Role Claims</label>
+                <div class="form-group">
+                    @foreach (var claim in ViewBag.AllClaims)
+                    {
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" name="Claims" value="@claim.Value" @(Model.Claims.Any(c => c.Value == claim.Value) ? "checked" : "")>
+                                @claim.Value
+                                <i class="input-helper"></i>
+                            </label>
+                        </div>
+                    }
                 </div>
                 <button type="submit" class="btn btn-primary">Update</button>
             </form>
         </div>
     </div>
 </div>
+
