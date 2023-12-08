@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using DataAccess.Security;
 using Core.Utilities.IoC;
+using Core.Utilities.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,7 +96,7 @@ using (var scope = app.Services.CreateScope())
 
 #endregion
 
-
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

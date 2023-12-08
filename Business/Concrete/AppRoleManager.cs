@@ -3,11 +3,15 @@ using Business.Abstract;
 using Business.Constants;
 using Business.Dto.Claim;
 using Business.Dto.Role;
+using Business.ValidationRules;
+using Business.ValidationRules.Request;
+using Core.Aspects.Validaiton;
 using Core.Entities.Concrete;
 using Core.Utilities.Business;
 using Core.Utilities.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace Business.Concrete;
@@ -23,6 +27,7 @@ public class AppRoleManager : IRoleService
         _mapper = mapper;
     }
 
+ 
     public async Task<IDataResult<List<RoleDto>>> GetAll()
     {
         var roles = await _roleManager.Roles.ToListAsync();
@@ -63,6 +68,8 @@ public class AppRoleManager : IRoleService
 
         return new SuccessDataResult<RoleDto>(roleDto);
     }
+
+    [ValidationAspect(typeof(RoleRequestDtoValidator))]
     public async Task<IResult> CreateAsync(RoleRequestDto roleRequestDto)
     {
         var result = await BusinessRules.RunAsync(
