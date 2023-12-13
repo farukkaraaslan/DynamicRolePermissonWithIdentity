@@ -27,27 +27,13 @@ public class AppRoleManager : IRoleService
         _mapper = mapper;
     }
 
- 
     public async Task<IDataResult<List<RoleDto>>> GetAll()
     {
         var roles = await _roleManager.Roles.ToListAsync();
-        var roleDtos = new List<RoleDto>();
-
-        foreach (var role in roles)
-        {
-            var claims = await _roleManager.GetClaimsAsync(role);
-            var roleDto = new RoleDto
-            {
-                Id = role.Id.ToString(),
-                Name = role.Name,
-                Claims = _mapper.Map<List<ClaimDto>>(claims)
-            };
-
-            roleDtos.Add(roleDto);
-        }
-
+        List<RoleDto> roleDtos = await GetAllClaimsToRoleAsync(roles);
         return new SuccessDataResult<List<RoleDto>>(roleDtos, Messages.Role.Listed);
     }
+
     public async Task<IDataResult<RoleDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
@@ -79,24 +65,21 @@ public class AppRoleManager : IRoleService
         {
             return result;
         }
+
         var role = _mapper.Map<UserRole>(roleRequestDto);
+
         var createResult = await _roleManager.CreateAsync(role);
 
-        foreach (var claim in roleRequestDto.Claims)
+        var addClaimsToRoleResult = await AddClaimsToRole(roleRequestDto.Claims, role);
+
+        if (!(createResult.Succeeded && addClaimsToRoleResult.Success))
         {
-
-            var newClaim = new Claim(claim.Type, claim.Value);
-            var addResult = await _roleManager.AddClaimAsync(role, newClaim);
-            if (!addResult.Succeeded)
-            {
-                return new ErrorResult(Messages.Claims.FailedAdded);
-            }
-
+            return new ErrorResult(Messages.Role.FailedCreate);
         }
-        return createResult.Succeeded != true
-            ? new ErrorResult(Messages.Role.FailedCreate)
-            : new SuccessResult(Messages.Role.Created);
+
+        return new SuccessResult(Messages.Role.Created);
     }
+
     public async Task<IResult> UpdateAsync(string id, RoleRequestDto roleRequestDto)
     {
         var result = await BusinessRules.RunAsync(
@@ -111,47 +94,24 @@ public class AppRoleManager : IRoleService
         }
 
         var existingRole = await _roleManager.FindByIdAsync(id);
-        if (existingRole == null)
-        {
-            return new ErrorResult(Messages.Role.NotFound);
-        }
 
         var existingClaims = await _roleManager.GetClaimsAsync(existingRole);
 
-        var claimsToRemove = existingClaims
-            .Where(ec => !roleRequestDto.Claims.Any(nc => nc.Type == ec.Type && nc.Value == ec.Value))
-            .ToList();
+        var removeUnUsedClaims = await RemoveUnusedRoleClaimsAsync(existingClaims, roleRequestDto, existingRole);
 
-        foreach (var claimToRemove in claimsToRemove)
-        {
-            var removeResult = await _roleManager.RemoveClaimAsync(existingRole, claimToRemove);
-            if (!removeResult.Succeeded)
-            {
-                return new ErrorResult(Messages.Claims.FailedRemoved);
-            }
-        }
-
-        foreach (var newClaimDto in roleRequestDto.Claims)
-        {
-            if (!existingClaims.Any(ec => ec.Type == newClaimDto.Type && ec.Value == newClaimDto.Value))
-            {
-                var newClaim = new Claim(newClaimDto.Type, newClaimDto.Value);
-                var addResult = await _roleManager.AddClaimAsync(existingRole, newClaim);
-                if (!addResult.Succeeded)
-                {
-                    return new ErrorResult(Messages.Claims.FailedAdded);
-                }
-            }
-        }
+        var updateClaimsToRole = await UpdateClaimsToRoleAsync(existingClaims, roleRequestDto, existingRole);
 
         _mapper.Map(roleRequestDto, existingRole);
 
         var updateRoleResult = await _roleManager.UpdateAsync(existingRole);
 
-        return updateRoleResult.Succeeded
-            ? new SuccessResult(Messages.Role.UpdatedSuccessfully)
-            : new ErrorResult(Messages.Role.FailedUpdate);
+        if (!(updateRoleResult.Succeeded && removeUnUsedClaims.Success && updateClaimsToRole.Success))
+        {
+            return new ErrorResult(Messages.Role.FailedUpdate);
+        }
+        return new SuccessResult(Messages.Role.UpdatedSuccessfully);
     }
+
     public async Task<IResult> DeleteAsync(string id)
     {
         var result = await BusinessRules.RunAsync(
@@ -165,23 +125,37 @@ public class AppRoleManager : IRoleService
         }
         var role = await _roleManager.FindByIdAsync(id);
 
-        var roleClaims = await _roleManager.GetClaimsAsync(role);
-
-        foreach (var claim in roleClaims)
-        {
-            var removeClaimResult = await _roleManager.RemoveClaimAsync(role, claim);
-            if (!removeClaimResult.Succeeded)
-            {
-                return new ErrorResult($"Failed to remove claim: {claim.Type}={claim.Value}");
-            }
-        }
+        var deleteRoleToClaim = await DeleteReloClaimsAsync(role);
 
         var deleteResult = await _roleManager.DeleteAsync(role);
 
-        return deleteResult.Succeeded
-            ? new SuccessResult("Role deleted along with its claims")
-            : new ErrorResult("Role not deleted");
+        if (!(deleteResult.Succeeded && deleteRoleToClaim.Success))
+        {
+            return new ErrorResult(Messages.Role.NotDeleted);
+        }
+        return new SuccessResult(Messages.Role.DeletedSuccesfullyRoleWithClaims);
     }
+
+    private async Task<List<RoleDto>> GetAllClaimsToRoleAsync(List<UserRole> roles)
+    {
+        var roleDtos = new List<RoleDto>();
+
+        foreach (var role in roles)
+        {
+            var claims = await _roleManager.GetClaimsAsync(role);
+            var roleDto = new RoleDto
+            {
+                Id = role.Id.ToString(),
+                Name = role.Name,
+                Claims = _mapper.Map<List<ClaimDto>>(claims)
+            };
+
+            roleDtos.Add(roleDto);
+        }
+
+        return roleDtos;
+    }
+
     private async Task<IResult> CheckExistingRole(string roleId)
     {
         var existingRole = await _roleManager.FindByIdAsync(roleId);
@@ -192,11 +166,11 @@ public class AppRoleManager : IRoleService
 
     private Task<IResult> CheckSuperAdminUpdate(string roleId)
     {
-        var superAdminRole = _roleManager.Roles.SingleOrDefault(r => r.Name == "Super-Admin");
+        var superAdminRole = _roleManager.Roles.SingleOrDefault(r => r.Name == Constants.Constants.Role.SuperAdmin);
 
         if (superAdminRole != null && roleId == superAdminRole.Id.ToString())
         {
-            return Task.FromResult<IResult>(new ErrorResult(Messages.Role.NotUpdateSuperAdmin));
+            return Task.FromResult<IResult>(new ErrorResult(Messages.Role.NotUpdatedSuperAdmin));
         }
 
         return Task.FromResult<IResult>(new SuccessResult());
@@ -204,7 +178,7 @@ public class AppRoleManager : IRoleService
 
     private Task<IResult> CheckSuperAdminDelete(string roleId)
     {
-        var superAdminRole = _roleManager.Roles.SingleOrDefault(r => r.Name == "Super-Admin");
+        var superAdminRole = _roleManager.Roles.SingleOrDefault(r => r.Name == Constants.Constants.Role.SuperAdmin);
 
         if (superAdminRole != null && roleId == superAdminRole.Id.ToString())
         {
@@ -213,6 +187,7 @@ public class AppRoleManager : IRoleService
 
         return Task.FromResult<IResult>(new SuccessResult());
     }
+
     private async Task<IResult> CheckDuplicateRoleName(string newRoleName, string roleId = null)
     {
         if (string.IsNullOrEmpty(roleId))
@@ -237,5 +212,67 @@ public class AppRoleManager : IRoleService
         return new SuccessResult();
     }
 
+    private async Task<IResult> AddClaimsToRole(List<ClaimDto> claims, UserRole role)
+    {
+        foreach (var claim in claims)
+        {
+            var newClaim = new Claim(claim.Type, claim.Value);
+            var addResult = await _roleManager.AddClaimAsync(role, newClaim);
 
+            if (!addResult.Succeeded)
+            {
+                return new ErrorResult(Messages.Claims.FailedAdded);
+            }
+        }
+        return new SuccessResult();
+    }
+
+    private async Task<IResult> RemoveUnusedRoleClaimsAsync(IList<Claim> existingClaims, RoleRequestDto roleRequestDto, UserRole existingRole)
+    {
+        var claimsToRemove = existingClaims
+        .Where(ec => !roleRequestDto.Claims.Any(nc => nc.Type == ec.Type && nc.Value == ec.Value))
+        .ToList();
+
+        foreach (var claimToRemove in claimsToRemove)
+        {
+            var removeResult = await _roleManager.RemoveClaimAsync(existingRole, claimToRemove);
+            if (!removeResult.Succeeded)
+            {
+                return new ErrorResult(Messages.Claims.FailedRemoved);
+            }
+        }
+        return new SuccessResult();
+    }
+
+    private async Task<IResult> UpdateClaimsToRoleAsync(IList<Claim> existingClaims, RoleRequestDto roleRequestDto, UserRole existingRole)
+    {
+        foreach (var newClaimDto in roleRequestDto.Claims)
+        {
+            if (!existingClaims.Any(ec => ec.Type == newClaimDto.Type && ec.Value == newClaimDto.Value))
+            {
+                var newClaim = new Claim(newClaimDto.Type, newClaimDto.Value);
+                var addResult = await _roleManager.AddClaimAsync(existingRole, newClaim);
+                if (!addResult.Succeeded)
+                {
+                    return new ErrorResult(Messages.Claims.FailedAdded);
+                }
+            }
+        }
+        return new SuccessResult();
+    }
+
+    private async Task<IResult> DeleteReloClaimsAsync(UserRole role)
+    {
+        var roleClaims = await _roleManager.GetClaimsAsync(role);
+
+        foreach (var claim in roleClaims)
+        {
+            var removeClaimResult = await _roleManager.RemoveClaimAsync(role, claim);
+            if (!removeClaimResult.Succeeded)
+            {
+                return new ErrorResult(Messages.Role.NotDeleteClaims);
+            }
+        }
+        return new SuccessResult();
+    }
 }

@@ -25,10 +25,9 @@
                 </div>
             }
 
-            <form asp-action="Update" asp-controller="Role" asp-route-id="@Model.Id" method="post">
+            <form asp-action="Update" asp-controller="Role"  method="post">
                 <div class="form-group">
                     <label for="Name" class="control-label">Role Name</label>
-                    <input type="hidden" asp-for="Id" class="form-control" />
                     <input type="text" asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>

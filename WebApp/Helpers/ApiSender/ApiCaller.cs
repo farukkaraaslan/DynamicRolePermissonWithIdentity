@@ -1,66 +1,56 @@
 ﻿// ApiCaller.cs
 using Newtonsoft.Json;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using WebApp.Helpers.ApiSender;
 using WebApp.Models;
 
 public class ApiCaller : IApiCaller
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _client;
 
-    public ApiCaller(IHttpClientFactory httpClientFactory)
+    public ApiCaller(HttpClient client)
     {
-        _httpClientFactory = httpClientFactory;
+        _client = client;
+
+        // Temel URL'yi burada tanımlayabilirsiniz.
+        _client.BaseAddress = new Uri("http://localhost:5290/api/");
     }
 
     public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
     {
-        using var client = _httpClientFactory.CreateClient();
-        var response = await client.GetAsync($"http://localhost:5290/api/{endpoint}");
-
+        var response = await _client.GetAsync(endpoint);
         return await HandleResponse<T>(response);
     }
 
     public async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object content)
     {
-        using var client = _httpClientFactory.CreateClient();
-        var jsonContent = JsonConvert.SerializeObject(content);
-        var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync($"http://localhost:5290/api/{endpoint}", stringContent);
-
+        var response = await _client.PostAsync(endpoint, CreateStringContent(content));
         return await HandleResponse<T>(response);
     }
 
     public async Task<ApiResponse<T>> PutAsync<T>(string endpoint, object content)
     {
-        using var client = _httpClientFactory.CreateClient();
-        var jsonContent = JsonConvert.SerializeObject(content);
-        var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-        var response = await client.PutAsync($"http://localhost:5290/api/{endpoint}", stringContent);
-
+        var response = await _client.PutAsync(endpoint, CreateStringContent(content));
         return await HandleResponse<T>(response);
     }
 
     public async Task<ApiResponse<T>> DeleteAsync<T>(string endpoint)
     {
-        using var client = _httpClientFactory.CreateClient();
-        var response = await client.DeleteAsync($"http://localhost:5290/api/{endpoint}");
-
+        var response = await _client.DeleteAsync(endpoint);
         return await HandleResponse<T>(response);
+    }
+
+    private StringContent CreateStringContent(object content)
+    {
+        var jsonContent = JsonConvert.SerializeObject(content);
+        return new StringContent(jsonContent, Encoding.UTF8, "application/json");
     }
 
     private async Task<ApiResponse<T>> HandleResponse<T>(HttpResponseMessage response)
     {
         var jsonData = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonConvert.DeserializeObject<ApiResponse<T>>(jsonData);
-
-        return new ApiResponse<T>
-        {
-            Success = response.IsSuccessStatusCode,
-            Data = apiResponse.Data,
-            Message = apiResponse.Message
-        };
+        return JsonConvert.DeserializeObject<ApiResponse<T>>(jsonData);
     }
 }

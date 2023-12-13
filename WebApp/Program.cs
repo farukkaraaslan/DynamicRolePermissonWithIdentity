@@ -1,3 +1,5 @@
+using NuGet.Configuration;
+using System.Configuration;
 using WebApp.Helpers.ApiSender;
 
 var builder = WebApplication.CreateBuilder(args);
