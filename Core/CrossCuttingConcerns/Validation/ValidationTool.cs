@@ -15,8 +15,6 @@ public class ValidationTool
         var result = validator.Validate(context);
         if (!result.IsValid)
         {
-       
-            //var errorMessages = string.Join("\n", result.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"));
             throw new ValidationException(result.Errors);
         }
     }

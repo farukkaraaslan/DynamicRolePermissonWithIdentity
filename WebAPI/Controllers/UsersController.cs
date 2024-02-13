@@ -37,9 +37,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("roles")]
-        public async Task<IActionResult> GetRoles([FromQuery(Name = "username")] string userName)
+        public async Task<IActionResult> GetRoles([FromQuery(Name = "userId")] string userId)
         {
-            var result = await _userService.GetRoleAsync(userName);
+            var result = await _userService.GetRoleAsync(userId);
             if (result.Success)
             {
                 return Ok(result);

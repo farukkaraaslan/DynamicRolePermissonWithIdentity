@@ -21,7 +21,6 @@ public class RoleController : Controller
         }
         else
         {
-            // Handle error, e.g., display an error page or redirect to another page
             return RedirectToAction("Error");
         }
     }

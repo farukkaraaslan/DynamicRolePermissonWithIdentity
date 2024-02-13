@@ -1,4 +1,5 @@
-﻿using Business.Abstract;
+﻿using AutoMapper;
+using Business.Abstract;
 using Business.Dto;
 using Core.Entities.Concrete;
 using Core.Utilities.Results;
@@ -17,12 +18,14 @@ public class AuthManager : IAuthService
     private readonly UserManager<User> _userManager;
     private readonly IUserService _userService;
     private readonly ITokenHelper _tokenHelper;
+    private readonly IMapper _mapper;
 
-    public AuthManager(UserManager<User> userManager, IUserService userService, ITokenHelper tokenHelper)
+    public AuthManager(UserManager<User> userManager, IUserService userService, ITokenHelper tokenHelper, IMapper mapper)
     {
         _userManager = userManager;
         _userService = userService;
         _tokenHelper = tokenHelper;
+        _mapper = mapper;
     }
 
     public async Task<IDataResult<AccessToken>> CreateAccessToken(string userName)
@@ -33,8 +36,9 @@ public class AuthManager : IAuthService
         {
             return new ErrorDataResult<AccessToken>("Kullanıcı bulunamadı.");
         }
-        var claims = await _userService.GetRoleAsync(user.Data.UserName);
-        var accessToken = _tokenHelper.CreateToken(user.Data, claims.Data);
+        var roles = await _userService.GetRoleAsync(user.Data.UserName);
+        var role = _mapper.Map<List<UserRole>>(roles);
+        var accessToken = _tokenHelper.CreateToken(user.Data, role);
         return new SuccessDataResult<AccessToken>(accessToken, "token oluşturuldu");
     }
 

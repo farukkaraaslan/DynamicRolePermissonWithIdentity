@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Business.Abstract;
 using Business.Dto;
+using Business.Dto.Role;
+using Business.Dto.User;
 using Core.Entities.Concrete;
 using Core.Utilities.Results;
 using Microsoft.AspNetCore.Identity;
@@ -40,7 +42,6 @@ public class AppUserManager : IUserService
 
         return new SuccessResult($"{existingUser.Data.Id} ID'ye sahip kullanıcı silindi.");
     }
-
     public async Task<IResult> DeleteAsync(string userId)
     {
         var user = await GetByIdAsync(userId);
@@ -66,9 +67,12 @@ public class AppUserManager : IUserService
 
         return new SuccessResult("Parola değiştirildi.");
     }
-    public IDataResult<List<User>> GetUsersAsync()
+    public IDataResult<List<UserReponseDto>> GetUsersAsync()
     {
-        return new SuccessDataResult<List<User>>(_userManager.Users.ToList());
+        var users = _userManager.Users.ToList();
+        var userDto= _mapper.Map<List<UserReponseDto>>(users);
+
+        return new SuccessDataResult<List<UserReponseDto>>(userDto);
     }
     public async Task<IDataResult<User>> GetByEmailAsync(string email)
     {
@@ -87,17 +91,17 @@ public class AppUserManager : IUserService
 
         return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>(user);
     }
-    public async Task<IDataResult<List<UserRole>>> GetRoleAsync(string userName)
+    public async Task<IDataResult<List<RoleResponseDto>>> GetRoleAsync(string userId)
     {
-        var user = await _userManager.FindByNameAsync(userName);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
-            return new ErrorDataResult<List<UserRole>>("Kullanıcı bulunamadı.");
+            return new ErrorDataResult<List<RoleResponseDto>>("Kullanıcı bulunamadı.");
         }
         var roles = await _userManager.GetRolesAsync(user);
-
-        var userRoles = roles.Select(role => new UserRole { Name = role }).ToList();
-
-        return new SuccessDataResult<List<UserRole>>(userRoles, $"{user.Id} ID'ye sahip kullanıcının rolleri bulundu.");
+       
+        var userRoles = roles.Select(role => new UserRole { Name = role }).ToList(); 
+        var roleDtos = _mapper.Map<List<RoleResponseDto>>(userRoles);
+        return new SuccessDataResult<List<RoleResponseDto>>(roleDtos, $"{user.Id} ID'ye sahip kullanıcının rolleri bulundu.");
     }
 }
