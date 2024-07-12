@@ -15,6 +15,6 @@ public interface IUserService
     Task<IDataResult<User>> GetByUserNameAsync(string username);
     Task<IDataResult<User>> GetByIdAsync(string id);
     Task<IResult> DeleteAsync(string userId);
-    Task<IResult> UpdateAsync(string id, UserUpdateDto userUpdateDto);
+    Task<IResult> UpdateAsync(string id, UserRequestDto userUpdateDto);
     Task<IResult> ChangePasswordAsync(ChangePasswordDto changePasswordDto);
 }

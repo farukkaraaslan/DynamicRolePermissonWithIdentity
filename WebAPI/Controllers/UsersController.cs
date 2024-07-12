@@ -1,5 +1,6 @@
 ﻿using Business.Abstract;
 using Business.Dto;
+using Business.Dto.User;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -14,7 +15,8 @@ namespace WebAPI.Controllers
         {
             _userService = userService;
         }
-        [HttpGet()]
+
+        [HttpGet]
         public IActionResult GetAll()
         {
             var result = _userService.GetUsersAsync();
@@ -25,8 +27,8 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpGet("username")]
-        public async Task<IActionResult> GetByUserName([FromQuery(Name = "username")] string userName)
+        [HttpGet("username/{userName}")]
+        public async Task<IActionResult> GetByUserName(string userName)
         {
             var result = await _userService.GetByUserNameAsync(userName);
             if (result.Success)
@@ -36,8 +38,8 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpGet("roles")]
-        public async Task<IActionResult> GetRoles([FromQuery(Name = "userId")] string userId)
+        [HttpGet("{userId}/roles")]
+        public async Task<IActionResult> GetRoles(string userId)
         {
             var result = await _userService.GetRoleAsync(userId);
             if (result.Success)
@@ -47,8 +49,8 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpGet("email")]
-        public async Task<IActionResult> GetByEmail([FromQuery(Name = "email")] string email)
+        [HttpGet("email/{email}")]
+        public async Task<IActionResult> GetByEmail(string email)
         {
             var result = await _userService.GetByEmailAsync(email);
             if (result.Success)
@@ -58,7 +60,7 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             var result = await _userService.GetByIdAsync(id);
@@ -80,7 +82,7 @@ namespace WebAPI.Controllers
             return BadRequest(result.Message);
         }
 
-        [HttpPost("changePasword")]
+        [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
             var result = await _userService.ChangePasswordAsync(changePasswordDto);
@@ -92,7 +94,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] UserUpdateDto model)
+        public async Task<IActionResult> Update(string id, [FromBody] UserRequestDto model)
         {
             var result = await _userService.UpdateAsync(id, model);
             if (result.Success)
@@ -112,6 +114,5 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
-
     }
 }

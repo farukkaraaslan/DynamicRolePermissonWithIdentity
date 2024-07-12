@@ -47,7 +47,7 @@
                             <td>@item.LastName</td>
                             <td>@item.Email</td>
                             <td>
-                                <a href="/role/update/@item.Id" type="button" class="btn btn-info">Edit</a>
+                                <a href="/users/update/@item.Id" type="button" class="btn btn-info">Edit</a>
                             </td>
                             <td>
                                 <form asp-action="DeleteConfirmed" asp-controller="Role" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this item?');">

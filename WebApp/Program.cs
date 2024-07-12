@@ -1,3 +1,4 @@
+using Core.Utilities.Exceptions;
 using NuGet.Configuration;
 using System.Configuration;
 using WebApp.Helpers.ApiSender;

@@ -36,8 +36,8 @@ public class AuthManager : IAuthService
         {
             return new ErrorDataResult<AccessToken>("Kullanıcı bulunamadı.");
         }
-        var roles = await _userService.GetRoleAsync(user.Data.UserName);
-        var role = _mapper.Map<List<UserRole>>(roles);
+        var roles = await _userService.GetRoleAsync(user.Data.Id.ToString());
+        var role = _mapper.Map<List<UserRole>>(roles.Data);
         var accessToken = _tokenHelper.CreateToken(user.Data, role);
         return new SuccessDataResult<AccessToken>(accessToken, "token oluşturuldu");
     }

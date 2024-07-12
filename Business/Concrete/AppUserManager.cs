@@ -32,16 +32,58 @@ public class AppUserManager : IUserService
         }
         return new SuccessResult("Kullanıcı oluşturuldu.");
     }
-    public async Task<IResult> UpdateAsync(string id, UserUpdateDto userUpdateDto)
+    public async Task<IResult> UpdateAsync(string id, UserRequestDto userUpdateDto)
     {
-        var user = _mapper.Map<User>(userUpdateDto);
+        // Kullanıcıyı id'ye göre bul
+        var existingUserResult = await GetByIdAsync(id);
+        if (!existingUserResult.Success)
+        {
+            return existingUserResult;
+        }
 
-        var existingUser = await GetByIdAsync(id);
+        var existingUser = existingUserResult.Data;
 
-        await _userManager.UpdateAsync(existingUser.Data);
+        // Kullanıcı bilgilerini güncelle
+        _mapper.Map(userUpdateDto, existingUser);
+        var updateResult = await _userManager.UpdateAsync(existingUser);
+        if (!updateResult.Succeeded)
+        {
+            // IdentityResult'tan hata mesajlarını al ve ErrorResult oluştur
+            return new ErrorResult(GetIdentityErrors(updateResult));
+        }
 
-        return new SuccessResult($"{existingUser.Data.Id} ID'ye sahip kullanıcı silindi.");
+        // Kullanıcının mevcut rollerini al
+        var currentRoles = await _userManager.GetRolesAsync(existingUser);
+
+        // Yeni roller ile karşılaştırarak eklenmesi veya çıkarılması gereken rolleri bul
+        var newRoles = userUpdateDto.Roles ?? new List<string>();
+
+        var rolesToAdd = newRoles.Except(currentRoles).ToList();
+        var rolesToRemove = currentRoles.Except(newRoles).ToList();
+
+        // Rolleri güncelle
+        var addRoleResults = await _userManager.AddToRolesAsync(existingUser, rolesToAdd);
+        if (!addRoleResults.Succeeded)
+        {
+            return new ErrorResult(GetIdentityErrors(addRoleResults));
+        }
+
+        var removeRoleResults = await _userManager.RemoveFromRolesAsync(existingUser, rolesToRemove);
+        if (!removeRoleResults.Succeeded)
+        {
+            return new ErrorResult(GetIdentityErrors(removeRoleResults));
+        }
+
+        return new SuccessResult($"{existingUser.Id} ID'ye sahip kullanıcı güncellendi.");
     }
+
+    // IdentityResult'tan hata mesajlarını almak için yardımcı metot
+    private string GetIdentityErrors(IdentityResult identityResult)
+    {
+        return string.Join(", ", identityResult.Errors.Select(e => e.Description));
+    }
+
+
     public async Task<IResult> DeleteAsync(string userId)
     {
         var user = await GetByIdAsync(userId);
