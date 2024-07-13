@@ -15,8 +15,8 @@ namespace DataAccess.Security
         public static async Task SeedClaimsForSuperAdmin(this RoleManager<UserRole> roleManager)
         {
             var adminRole = await roleManager.FindByNameAsync(Roles.SuperAdmin);
-            await AddPermissionClaim(roleManager, adminRole, "Blogs");
-            await AddPermissionClaim(roleManager, adminRole, "Notices");
+            await AddPermissionClaim(roleManager, adminRole, "User");
+            await AddPermissionClaim(roleManager, adminRole, "Role");
         }
 
         public static async Task AddPermissionClaim(this RoleManager<UserRole> roleManager, UserRole role, string module)

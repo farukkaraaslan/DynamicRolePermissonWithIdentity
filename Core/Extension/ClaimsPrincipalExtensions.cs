@@ -15,13 +15,14 @@ public static class ClaimsPrincipalExtensions
         return result;
     }
 
-    public static List<string> ClaimRoles(this ClaimsPrincipal claimsPrincipal)
+    public static IEnumerable<string> ClaimRoles(this ClaimsPrincipal user)
     {
-        return claimsPrincipal?.Claims(ClaimTypes.Role);
+        return user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
     }
 
-    public static List<string> ClaimPermissions(this ClaimsPrincipal claimsPrincipal)
+    public static IEnumerable<string> ClaimPermissions(this ClaimsPrincipal user)
     {
-        return claimsPrincipal?.Claims("Permissions");
+        // İzinler için benzer bir işlem yapılabilir
+        return user.Claims.Where(c => c.Type == "Permission").Select(c => c.Value);
     }
 }

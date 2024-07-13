@@ -35,7 +35,7 @@ public class AuthController : Controller
             Response.Cookies.Append("access_token", response.Data.Token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = false, // Eğer HTTPS kullanıyorsanız
                 SameSite = SameSiteMode.Strict
             });
             return RedirectToAction("Index", "Home");
@@ -43,6 +43,15 @@ public class AuthController : Controller
 
         TempData["ErrorMessage"] = "Geçersiz giriş bilgileri";
         return View(model);
+    }
+    [HttpPost]
+    public IActionResult Logout()
+    {
+        // Çerezi silme
+        Response.Cookies.Delete("access_token");
+
+        // Kullanıcıyı login sayfasına yönlendirme
+        return RedirectToAction("Login", "Auth");
     }
 }
 

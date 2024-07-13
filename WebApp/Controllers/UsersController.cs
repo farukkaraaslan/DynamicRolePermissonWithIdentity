@@ -21,15 +21,61 @@ public class UsersController : Controller
     public async Task<IActionResult> Index()
     {
         var response = await _apiCaller.GetAsync<List<UserViewModel>>("Users");
+
         if (response.Success)
         {
             return View(response.Data);
         }
         else
         {
-            return RedirectToAction("Error");
+            var errorMessage = response.Message ?? "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+            TempData["ErrorMessage"] = errorMessage;
+            return View("AccessDenided");
         }
     }
+    public async Task<IActionResult> Create()
+    {
+    
+     
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CreateUserModel viewModel)
+    {
+        // Model doğrulaması
+        if (!ModelState.IsValid)
+        {
+            return View(viewModel);
+        }
+
+        // ViewModel'den API modeline dönüşüm
+        var createUserModel = new CreateUserModel
+        {
+            UserName = viewModel.UserName,
+            Name = viewModel.Name,
+            LastName = viewModel.LastName,
+            Email = viewModel.Email,
+            Password = viewModel.Password,
+           
+        };
+
+        // API çağrısı
+        var response = await _apiCaller.PostAsync<CreateUserModel>("Users", createUserModel);
+
+        // Yanıt durumuna göre işlem
+        if (response.Success)
+        {
+            TempData["SuccessMessage"] = response.Message;
+            return RedirectToAction("Index");
+        }
+        else
+        {
+            TempData["ErrorMessage"] = response.Message;
+            return View(viewModel);
+        }
+    }
+
     public async Task<IActionResult> Update(string id)
     {
         var userResponse = await _apiCaller.GetAsync<UpdateUserViewModel>($"Users/{id}");

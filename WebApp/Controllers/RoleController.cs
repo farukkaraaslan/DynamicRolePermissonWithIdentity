@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using WebApp.Helpers.ApiSender;
 using WebApp.Models.Claim;
 using WebApp.Models.Role;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using WebApp.Helpers;
 
 [Authorize]
 public class RoleController : Controller
@@ -21,62 +25,58 @@ public class RoleController : Controller
         {
             return View(response.Data);
         }
-        else
-        {
-            return RedirectToAction("Error");
-        }
+
+        TempData["ErrorMessage"] = response.Message;
+        return RedirectToAction("Error");
     }
+
     public async Task<IActionResult> Create()
     {
-
         var claimsResponse = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
         if (claimsResponse.Success)
         {
             ViewBag.Claims = claimsResponse.Data;
             return View();
         }
-        else
-        {
-            return RedirectToAction("Error");
-        }
+
+        TempData["ErrorMessage"] = claimsResponse.Message;
+        return RedirectToAction("Error");
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateRoleModel createRoleModel, List<string> claims)
     {
+        if (!ModelState.IsValid)
+        {
+            return View(createRoleModel);
+        }
 
-        var addRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
-
-        createRoleModel.Claims = addRoleClaims;
+        createRoleModel.Claims = claims.ToClaims(); // Bu satırda hata almayacaksınız.
         var response = await _apiCaller.PostAsync<CreateRoleModel>("Roles", createRoleModel);
-
         if (response.Success)
         {
             TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction("Create");
+            return RedirectToAction("Index");
         }
 
-        else
-        {
-            TempData["ErrorMessage"] = response.Message;
-            return RedirectToAction("Create");
-        }
+        TempData["ErrorMessage"] = response.Message;
+        return View(createRoleModel);
     }
+
 
     public async Task<IActionResult> Update(string id)
     {
         var roleResponse = await _apiCaller.GetAsync<UpdateRoleModel>($"Roles/{id}");
         var claimsResponse = await _apiCaller.GetAsync<List<ClaimDto>>("Claims");
+
         if (roleResponse.Success && claimsResponse.Success)
         {
             ViewBag.AllClaims = claimsResponse.Data;
             return View(roleResponse.Data);
         }
-        else
-        {
-            return RedirectToAction("Error");
-        }
 
+        TempData["ErrorMessage"] = roleResponse.Message ?? claimsResponse.Message;
+        return RedirectToAction("Error");
     }
 
     [HttpPost]
@@ -84,24 +84,19 @@ public class RoleController : Controller
     {
         if (!ModelState.IsValid)
         {
-
             return View(updateRoleModel);
         }
-        var updateRoleClaims = claims.Select(claim => new ClaimDto { Type = "Permissions", Value = claim }).ToList();
 
-        updateRoleModel.Claims = updateRoleClaims;
+        updateRoleModel.Claims = claims.ToClaims();
         var response = await _apiCaller.PutAsync<UpdateRoleModel>($"Roles/{id}", updateRoleModel);
-
         if (response.Success)
         {
             TempData["SuccessMessage"] = response.Message;
             return RedirectToAction("Index");
         }
-        else
-        {
-            TempData["ErrorMessage"] = response.Message;
-            return RedirectToAction("Update");
-        }
+
+        TempData["ErrorMessage"] = response.Message;
+        return View(updateRoleModel);
     }
 
     public async Task<IActionResult> Delete(string id)
@@ -111,26 +106,16 @@ public class RoleController : Controller
         {
             return View(response.Data);
         }
-        else
-        {
-            // Handle error
-            return RedirectToAction("Error");
-        }
+
+        TempData["ErrorMessage"] = response.Message;
+        return RedirectToAction("Error");
     }
 
     [HttpPost]
     public async Task<IActionResult> DeleteConfirmed(string id)
     {
         var response = await _apiCaller.DeleteAsync<RoleViewModel>($"Roles/{id}");
-        if (response.Success)
-        {
-            TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction("Index");
-        }
-        else
-        {
-            TempData["ErrorMessage"] = response.Message;
-            return RedirectToAction("Index");
-        }
+        TempData["SuccessMessage"] = response.Message;
+        return RedirectToAction("Index");
     }
 }

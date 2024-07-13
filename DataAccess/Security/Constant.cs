@@ -28,19 +28,19 @@ public static class Constant
             $"Permissions.{module}.Delete",
         };
         }
-        public static class Blogs
+        public static class User
         {
-            public const string View = "Permissions.Blogs.View";
-            public const string Create = "Permissions.Blogs.Create";
-            public const string Edit = "Permissions.Blogs.Edit";
-            public const string Delete = "Permissions.Blog.Delete";
+            public const string View = "Permissions.UserView";
+            public const string Create = "Permissions.User.Create";
+            public const string Edit = "Permissions.User.Edit";
+            public const string Delete = "Permissions.User.Delete";
         }
-        public static class Notices
+        public static class Role
         {
-            public const string View = "Permissions.Notices.View";
-            public const string Create = "Permissions.Notices.Create";
-            public const string Edit = "Permissions.Notices.Edit";
-            public const string Delete = "Permissions.Notices.Delete";
+            public const string View = "Permissions.Role.View";
+            public const string Create = "Permissions.Role.Create";
+            public const string Edit = "Permissions.Role.Edit";
+            public const string Delete = "Permissions.Role.Delete";
         }
     }
 }

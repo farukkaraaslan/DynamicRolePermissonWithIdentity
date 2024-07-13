@@ -15,23 +15,16 @@ public class ApiCaller : IApiCaller
     {
         _client = client;
         _httpContextAccessor = httpContextAccessor;
-
-        // Temel URL'yi burada tanımlayabilirsiniz.
         _client.BaseAddress = new Uri("http://localhost:5290/api/");
     }
 
-    public void AddAuthorizationHeader()
+    private void AddAuthorizationHeader()
     {
-        var token = _httpContextAccessor.HttpContext.Request.Cookies["access_token"]; // JWT'yi çerezden alın
+        var token = _httpContextAccessor.HttpContext.Request.Cookies["access_token"];
         if (!string.IsNullOrEmpty(token))
         {
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-    }
-
-    public void SetBearerToken(string token)
-    {
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
@@ -71,6 +64,16 @@ public class ApiCaller : IApiCaller
     private async Task<ApiResponse<T>> HandleResponse<T>(HttpResponseMessage response)
     {
         var jsonData = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<ApiResponse<T>>(jsonData);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return JsonConvert.DeserializeObject<ApiResponse<T>>(jsonData);
+        }
+        var errorResponse = JsonConvert.DeserializeObject<ErrorResult>(jsonData);
+        return new ApiResponse<T>
+        {
+            Success = false,
+            Message = errorResponse.Detail 
+        };
     }
 }

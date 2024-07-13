@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Business.Abstract;
+using Business.BusinessAspects;
 using Business.Dto;
 using Business.Dto.Role;
 using Business.Dto.User;
@@ -20,6 +21,7 @@ public class AppUserManager : IUserService
         _mapper = mapper;
     }
 
+    [SecuredOperation("Permissions.User.Create")]
     public async Task<IResult> CreateAsync(UserRegisterDto userRegisterDto, string password)
     {
         var user = _mapper.Map<User>(userRegisterDto);
@@ -32,9 +34,10 @@ public class AppUserManager : IUserService
         }
         return new SuccessResult("Kullanıcı oluşturuldu.");
     }
+
+    [SecuredOperation("Permissions.User.Edit")]
     public async Task<IResult> UpdateAsync(string id, UserRequestDto userUpdateDto)
     {
-        // Kullanıcıyı id'ye göre bul
         var existingUserResult = await GetByIdAsync(id);
         if (!existingUserResult.Success)
         {
@@ -43,47 +46,37 @@ public class AppUserManager : IUserService
 
         var existingUser = existingUserResult.Data;
 
-        // Kullanıcı bilgilerini güncelle
         _mapper.Map(userUpdateDto, existingUser);
         var updateResult = await _userManager.UpdateAsync(existingUser);
         if (!updateResult.Succeeded)
         {
-            // IdentityResult'tan hata mesajlarını al ve ErrorResult oluştur
-            return new ErrorResult(GetIdentityErrors(updateResult));
+            return new IdentityResultErrors(updateResult);
         }
 
-        // Kullanıcının mevcut rollerini al
         var currentRoles = await _userManager.GetRolesAsync(existingUser);
 
-        // Yeni roller ile karşılaştırarak eklenmesi veya çıkarılması gereken rolleri bul
         var newRoles = userUpdateDto.Roles ?? new List<string>();
 
         var rolesToAdd = newRoles.Except(currentRoles).ToList();
         var rolesToRemove = currentRoles.Except(newRoles).ToList();
 
-        // Rolleri güncelle
         var addRoleResults = await _userManager.AddToRolesAsync(existingUser, rolesToAdd);
         if (!addRoleResults.Succeeded)
         {
-            return new ErrorResult(GetIdentityErrors(addRoleResults));
+            return new IdentityResultErrors(addRoleResults);
         }
 
         var removeRoleResults = await _userManager.RemoveFromRolesAsync(existingUser, rolesToRemove);
         if (!removeRoleResults.Succeeded)
         {
-            return new ErrorResult(GetIdentityErrors(removeRoleResults));
+            return new IdentityResultErrors(removeRoleResults);
         }
 
         return new SuccessResult($"{existingUser.Id} ID'ye sahip kullanıcı güncellendi.");
     }
 
-    // IdentityResult'tan hata mesajlarını almak için yardımcı metot
-    private string GetIdentityErrors(IdentityResult identityResult)
-    {
-        return string.Join(", ", identityResult.Errors.Select(e => e.Description));
-    }
-
-
+ 
+    [SecuredOperation("Permissions.User.Delete")]
     public async Task<IResult> DeleteAsync(string userId)
     {
         var user = await GetByIdAsync(userId);
@@ -109,6 +102,8 @@ public class AppUserManager : IUserService
 
         return new SuccessResult("Parola değiştirildi.");
     }
+
+    [SecuredOperation("Permissions.User.View")]
     public IDataResult<List<UserReponseDto>> GetUsersAsync()
     {
         var users = _userManager.Users.ToList();
@@ -116,23 +111,30 @@ public class AppUserManager : IUserService
 
         return new SuccessDataResult<List<UserReponseDto>>(userDto);
     }
+
+    [SecuredOperation("Permissions.User.View")]
     public async Task<IDataResult<User>> GetByEmailAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
         return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>(user);
     }
+
+    [SecuredOperation("Permissions.User.View")]
     public async Task<IDataResult<User>> GetByIdAsync(string id)
     {
         var user = await _userManager.FindByIdAsync(id);
 
         return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamdı.") : new SuccessDataResult<User>(user);
     }
+
     public async Task<IDataResult<User>> GetByUserNameAsync(string username)
     {
         var user = await _userManager.FindByNameAsync(username);
 
         return user == null ? new ErrorDataResult<User>("Kullanıcı bulunamadı.") : new SuccessDataResult<User>(user);
     }
+
+  
     public async Task<IDataResult<List<RoleResponseDto>>> GetRoleAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);

@@ -55,10 +55,12 @@
                                 <i class="ti-settings text-primary"></i>
                                 Settings
                             </a>
-                            <a class="dropdown-item">
-                                <i class="ti-power-off text-primary"></i>
-                                Logout
-                            </a>
+                            <form asp-controller="Auth" asp-action="Logout" method="post">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="ti-power-off text-primary"></i>
+                                    Logout
+                                </button>
+                            </form>
                         </div>
                     </li>
                 </ul>

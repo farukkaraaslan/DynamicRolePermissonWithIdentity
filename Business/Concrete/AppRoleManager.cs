@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Business.Abstract;
+using Business.BusinessAspects;
 using Business.Constants;
 using Business.Dto.Claim;
 using Business.Dto.Role;
@@ -27,6 +28,7 @@ public class AppRoleManager : IRoleService
         _mapper = mapper;
     }
 
+    [SecuredOperation("Permissions.Role.View")]
     public async Task<IDataResult<List<RoleDto>>> GetAll()
     {
         var roles = await _roleManager.Roles.ToListAsync();
@@ -34,6 +36,7 @@ public class AppRoleManager : IRoleService
         return new SuccessDataResult<List<RoleDto>>(roleDtos, Messages.Role.Listed);
     }
 
+    [SecuredOperation("Permissions.Role.View")]
     public async Task<IDataResult<RoleDto>> GetByIdAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
@@ -55,6 +58,8 @@ public class AppRoleManager : IRoleService
         return new SuccessDataResult<RoleDto>(roleDto);
     }
 
+
+    [SecuredOperation("Permissions.Role.Create")]
     [ValidationAspect(typeof(RoleRequestDtoValidator))]
     public async Task<IResult> CreateAsync(RoleRequestDto roleRequestDto)
     {
@@ -80,6 +85,8 @@ public class AppRoleManager : IRoleService
         return new SuccessResult(Messages.Role.Created);
     }
 
+
+    [SecuredOperation("Permissions.Role.Edit")]
     public async Task<IResult> UpdateAsync(string id, RoleRequestDto roleRequestDto)
     {
         var result = await BusinessRules.RunAsync(
@@ -112,6 +119,8 @@ public class AppRoleManager : IRoleService
         return new SuccessResult(Messages.Role.UpdatedSuccessfully);
     }
 
+
+    [SecuredOperation("Permissions.Role.Delete")]
     public async Task<IResult> DeleteAsync(string id)
     {
         var result = await BusinessRules.RunAsync(
@@ -136,6 +145,9 @@ public class AppRoleManager : IRoleService
         return new SuccessResult(Messages.Role.DeletedSuccesfullyRoleWithClaims);
     }
 
+
+
+    [SecuredOperation("Permissions.Role.View")]
     private async Task<List<RoleDto>> GetAllClaimsToRoleAsync(List<UserRole> roles)
     {
         var roleDtos = new List<RoleDto>();
