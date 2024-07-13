@@ -51,7 +51,7 @@ public class AuthManager : IAuthService
         }
         if (!await _userManager.CheckPasswordAsync(user.Data, password))
         {
-            return new ErrorResult("Kullanıcı adı veya parola hatalı.");
+            return new ErrorDataResult<AccessToken>("Kullanıcı adı veya parola hatalı.");
         }
         return new SuccessResult("Giriş işlemi başarılı.");
     }

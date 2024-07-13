@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebApp.Helpers.ApiSender;
 using WebApp.Models.Claim;
 using WebApp.Models.Role;
 
+[Authorize]
 public class RolesController : Controller
 {
     private readonly IApiCaller _apiCaller;

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using WebApp.Helpers.ApiSender;
 using WebApp.Models;
@@ -7,7 +8,7 @@ using WebApp.Models.Role;
 using WebApp.Models.User;
 
 namespace WebApp.Controllers;
-
+[Authorize]
 public class UsersController : Controller
 {
     private readonly IApiCaller _apiCaller;

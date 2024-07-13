@@ -1,11 +1,13 @@
 ﻿using Business.Abstract;
 using Business.Dto.Claim;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class ClaimsController : ControllerBase
 {
     private readonly IClaimService _claimService;

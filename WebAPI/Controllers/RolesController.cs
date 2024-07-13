@@ -1,5 +1,6 @@
 ﻿using Business.Abstract;
 using Business.Dto.Role;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -7,7 +8,7 @@ namespace WebAPI.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-
+    [Authorize]
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _roleService;

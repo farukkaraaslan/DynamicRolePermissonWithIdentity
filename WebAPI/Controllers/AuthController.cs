@@ -25,17 +25,17 @@ namespace WebAPI.Controllers
          
             if (!userToLogin.Success)
             {
-                return BadRequest(userToLogin.Message);
+                return BadRequest(userToLogin);
             }
             var result = await _authService.CreateAccessToken(userLoginDto.UserName);
             if (result.Success)
             {
-                return Ok(result.Data);
+                return Ok(result);
                 
             }
            
             
-            return BadRequest(result.Message);
+            return BadRequest(result);
         }
     }
 }
